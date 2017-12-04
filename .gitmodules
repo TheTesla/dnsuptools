@@ -1,0 +1,3 @@
+[submodule "inwxclient"]
+	path = inwxclient
+	url = https://github.com/inwx/python2.7-client.git
