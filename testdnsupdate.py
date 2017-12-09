@@ -2,12 +2,16 @@
 # -*- encoding: UTF8 -*-
 
 from dnsupdate import *
+from passwords import *
 import sys
 
 
 update = DNSUpdate()
-update.setUser('entroserv')
-update.setPasswd(sys.argv[1])
+
+update.setUserDict(inwxUserDict)
+update.setPasswdDict(inwxPasswdDict)
+#update.setUser('entroserv')
+#update.setPasswd(sys.argv[1])
 
 #update.qry({'domain': 'entroserv.de'})
 print(update.qry({'name': 'entroserv.de'}))

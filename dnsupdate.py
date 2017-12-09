@@ -2,7 +2,7 @@
 # -*- encoding: UTF8 -*-
 
 from inwxclient.inwx import domrobot, prettyprint, getOTP
-
+from passwords import *
 
 def createKeyDomainIfNotExists(d):
     if 'domain' not in d.keys():
@@ -29,38 +29,57 @@ class DNSUpdate:
     def __init__(self):
         self.__apiUrl = 'https://api.domrobot.com/xmlrpc/'
         self.__conn = None
-        self.__user = 'user'
-        self.__passwd = 'passwd'
+        self.__userDict = {'default': 'user'}
+        self.__passwdDict = {'default': 'passwd'}
         self.__rv = None
-        self.__isOpened = False
+        self.__isOpened = ''
 
     def setApiUrl(self, apiUrl):
         self.__apiUrl = apiUrl
 
-    def setUser(self, user):
-        self.__user = user
+    def setUser(self, user, domain = 'default'):
+        self.__userDict[str(domain)] = user
 
-    def setPasswd(self, passwd):
-        self.__passwd = passwd
+    def setUserDict(self, userDict):
+        self.__userDict = userDict
 
-    def __open(self):
-        if self.__isOpened is True:
+    def setPasswd(self, passwd, domain = 'default'):
+        self.__passwdDict[str(domain)] = passwd
+
+    def setPasswdDict(self, passwdDict):
+        self.__passwdDict = passwdDict
+
+    def getPasswd(self, domain):
+        domain = str(domain)
+        if domain not in self.__passwdDict.keys():
+            domain = 'default'
+        return self.__passwdDict[domain]
+
+    def getUser(self, domain):
+        domain = str(domain)
+        if domain not in self.__userDict.keys():
+            domain = 'default'
+        return self.__userDict[domain]
+
+    def __open(self, domain):
+        if self.__isOpened == domain:
             return
         self.__conn = domrobot(self.__apiUrl, False)
-        self.__rv = self.__conn.account.login({'lang': 'en', 'user': self.__user, 'pass': self.__passwd})
+        self.__rv = self.__conn.account.login({'lang': 'en', 'user': self.getUser(domain), 'pass': self.getPasswd(domain)})
         if 1000 != self.__rv['code']:
             return
-        self.__isOpened = True
+        self.__isOpened = domain
 
     def close(self):
-        self.__isOpened = False
+        self.__isOpened = ''
+        
 
     def qry(self, filterDict):
         if type(filterDict) is list:
             self.__rv = [self.qry(e) for e in filterDict]
             return self.__rv
-        self.__open()
         createKeyDomainIfNotExists(filterDict)
+        self.__open(filterDict['domain'])
         self.__rv = self.__conn.nameserver.info(filterDict)
         return self.__rv
 
@@ -68,8 +87,8 @@ class DNSUpdate:
         if type(updateDict) is list:
             self.__rv = [self.add(e) for e in updateDict]
             return self.__rv
-        self.__open()
         createKeyDomainIfNotExists(updateDict)
+        self.__open(updateDict['domain'])
         try:
             self.__rv = self.__conn.nameserver.createRecord(updateDict)
         except Exception as e:
