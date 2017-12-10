@@ -10,7 +10,7 @@ def createKeyDomainIfNotExists(d):
 
 def extractIds(rv):
     if type(rv) is list:
-        return [extractIds(e) for e in rv]
+        return [extractIds(e) for e in rv if 'record' in e['resData']]
     return [e['id'] for e in rv['resData']['record']]
 
 def flatgen(x):
@@ -23,6 +23,17 @@ def flatgen(x):
 
 def flatten(x):
     return [e for e in flatgen(x)]
+
+def makeDictList(baseDict, entryName, entryList):
+    if type(entryList) is not list:
+        entryList = [entryList]
+    dictList = []
+    for e in entryList:
+        extDict = dict(baseDict)
+        extDict.update({str(entryName): e})
+        dictList.append(extDict)
+    return dictList
+
 
 class DNSUpdate:
     '''Class allows updating inwx zone entries'''
@@ -101,12 +112,31 @@ class DNSUpdate:
 
     def delete(self, deleteDict, preserveDict = []):
         deleteRv = self.qry(deleteDict)
+        print(deleteRv)
         deleteIds = set(flatten(extractIds(deleteRv)))
         preserveRv = self.qry(preserveDict)
         preserveIds = set(flatten(extractIds(preserveRv)))
         deleteOnlyIds = deleteIds - preserveIds
         self.__rv = [self.__conn.nameserver.deleteRecord({'id': e}) for e in deleteOnlyIds]
         return self.__rv
+
+    def addList(self, baseRecord, contentList):
+        self.add(makeDictList(baseRecord, 'content', contentList))
+
+    def delList(self, baseRecord, contentDelete = '*', contentPreserve = []):
+        if type(contentDelete) is str:
+            contentDelete = [contentDelete]
+        if '*' in contentDelete:
+            delList = baseRecord
+        else:
+            delList = makeDictList(baseRecord, 'content', contentDelete)
+        presList = makeDictList(baseRecord, 'content', contentPreserve)
+        print(delList)
+        print(presList)
+        self.delete(delList, presList)
+
+
+
 
 
 
