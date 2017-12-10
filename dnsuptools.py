@@ -47,7 +47,27 @@ class DNSUpTools(DNSUpdate):
     def delA(self, name, aDelete = '*', aPreserve = []):
         self.delList({'name': name, 'type': 'A'}, aDelete, aPreserve)    
 
+    def setA(self, name, a = None):
+        if a is None:
+            a = getIPv4()
+        if a is None:
+            return
+        self.setList({'name': name, 'type': 'A'}, a)
 
+    def addAAAA(self, name, aaaa):
+        self.addList({'name': name, 'type': 'AAAA'}, aaaa)
+
+    def delAAAA(self, name, aaaaDelete = '*', aaaaPreserve = []):
+        self.delList({'name': name, 'type': 'AAAA'}, aaaaDelete, aaaaPreserve)    
+
+    def setAAAA(self, name, aaaa = None):
+        if aaaa is None:
+            aaaa = getIPv6()
+        if aaaa is None:
+            return
+        self.setList({'name': name, 'type': 'AAAA'}, aaaa)
+
+    
 
 
 

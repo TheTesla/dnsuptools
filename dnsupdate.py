@@ -135,8 +135,9 @@ class DNSUpdate:
         print(presList)
         self.delete(delList, presList)
 
-
-
+    def setList(self, baseRecord, contentList):
+        self.addList(baseRecord, contentList)
+        self.delList(baseRecord, '*', contentList)
 
 
 
