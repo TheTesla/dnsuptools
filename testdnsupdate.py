@@ -8,8 +8,8 @@ import sys
 
 update = DNSUpdate()
 
-update.setUserDict(inwxUserDict)
-update.setPasswdDict(inwxPasswdDict)
+#update.setUserDict(inwxUserDict)
+#update.setPasswdDict(inwxPasswdDict)
 #update.setUser('entroserv')
 #update.setPasswd(sys.argv[1])
 

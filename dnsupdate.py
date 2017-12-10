@@ -27,12 +27,16 @@ def flatten(x):
 class DNSUpdate:
     '''Class allows updating inwx zone entries'''
     def __init__(self):
+        global inwxUserDict
+        global inwxPasswdDict
         self.__apiUrl = 'https://api.domrobot.com/xmlrpc/'
         self.__conn = None
         self.__userDict = {'default': 'user'}
         self.__passwdDict = {'default': 'passwd'}
         self.__rv = None
         self.__isOpened = ''
+        self.setUserDict(inwxUserDict)
+        self.setPasswdDict(inwxPasswdDict)
 
     def setApiUrl(self, apiUrl):
         self.__apiUrl = apiUrl
