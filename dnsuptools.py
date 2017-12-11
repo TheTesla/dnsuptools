@@ -67,7 +67,78 @@ class DNSUpTools(DNSUpdate):
             return
         self.setList({'name': name, 'type': 'AAAA'}, aaaa)
 
+    def addMX(self, name, mx, prio = 10):
+        self.addList({'name': name, 'type': 'MX', 'prio': prio}, mx)
+
+    def delMX(self, name, mxDelete = '*', mxPreserve = [], prio = None):
+        if prio is None:
+            self.delList({'name': name, 'type': 'MX'}, mxDelete, mxPreserve)
+        else:
+            self.delList({'name': name, 'type': 'MX', 'prio': prio}, mxDelete, mxPreserve)
+
+    def setMX(self, name, mx, prio = 10):
+        self.setList({'name': name, 'type': 'MX', 'prio': prio}, mx)
+
+    def addCNAME(self, name, cname):
+        self.addList({'name': name, 'type': 'CNAME'}, cname)
+
+    def delCNAME(self, name, cnameDelete = '*', cnamePreserve = []):
+        self.delList({'name': name, 'type': 'CNAME'}, cnameDelete, cnamePreserve)
+
+    def setCNAME(self, name, cname):
+        self.setList({'name': name, 'type': 'CNAME'}, cname)
+
+    def addTXT(self, name, txt):
+        self.addList({'name': name, 'type': 'TXT'}, txt)
+
+    def delTXT(self, name, txtDelete = '*', txtPreserve = []):
+        self.delList({'name': name, 'type': 'TXT'}, txtDelete, txtPreserve)
+
+    def setTXT(self, name, txt):
+        self.setList({'name': name, 'type': 'TXT'}, txt)
+
+    def addNS(self, name, ns):
+        self.addList({'name': name, 'type': 'NS'}, ns)
+
+    def delNS(self, name, nsDelete = '*', nsPreserve = []):
+        self.delList({'name': name, 'type': 'NS'}, nsDelete, nsPreserve)
+
+    def setNS(self, name, ns):
+        self.setList({'name': name, 'type': 'NS'}, ns)
+
+    def addTLSA(self, name, tlsa):
+        self.addList({'name': name, 'type': 'TLSA'}, tlsa)
+
+    def delTLSA(self, name, tlsaDelete = '*', tlsaPreserve = []):
+        self.delList({'name': name, 'type': 'TLSA'}, tlsaDelete, tlsaPreserve)
+
+    def setTLSA(self, name, tlsa):
+        self.setList({'name': name, 'type': 'TLSA'}, tlsa)
+
+    def addSPF(self, name, spf, v = 'spf1'):
+        self.addTXT(name, 'v=%s %s' % (v, spf))
+
+    def delSPF(self, name, spfDelete = '*', v = 'spf1', spfPreserve = []):
+        if '*' == str(spfDelete):
+            self.delTXT(name)
+        else:
+            self.delTXT(name, 'v=%s %s' % (v, spfDelete), spfPreserve)
+
+    def addADSP(self, name, adsp):
+        self.addList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
     
+    def delADSP(self, name, adspDelete = '*', adspPreserve = []):
+        if '*' == adspDelete:
+            self.delTXT('_adsp._domainkey.' + str(name), '*', adspPreserve)
+        else:
+            self.delTXT('_adsp._domainkey.' + str(name), 'dkim=' + str(adspDelete), adspPreserve)
+    
+    def setADSP(self, name, adsp):
+        self.setList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
+    
+    def addDKIM(self, name, p, keyname = 'key1', v = 'DKIM1', k = 'rsa'):
+        self.addTXT(str(keyname) + '._domainkey.' + str(name), 'v=%s; k=%s; p=%s' % (v, k, p)) 
+
 
 
 

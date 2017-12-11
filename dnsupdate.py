@@ -34,6 +34,17 @@ def makeDictList(baseDict, entryName, entryList):
         dictList.append(extDict)
     return dictList
 
+def matchUpperLabels(rv, name):
+    records = []
+    for i, record in enumerate(rv['resData']['record']):
+        if name.count('.') > record['name'].count('.'):
+            continue
+        elif record['name'].split('.', record['name'].count('.') - name.count('.'))[-1] == name:
+            records.append(record)
+    rv['resData']['record'] = records
+    return rv
+
+
 
 class DNSUpdate:
     '''Class allows updating inwx zone entries'''
@@ -97,6 +108,18 @@ class DNSUpdate:
         self.__open(filterDict['domain'])
         self.__rv = self.__conn.nameserver.info(filterDict)
         return self.__rv
+
+    def qryWild(self, filterDict, filterFunc = matchUpperLabels):
+        if type(filterDict) is list:
+            self.__rv = [self.qryWild(e, filterFunc) for e in filterDict]
+            return self.__rv
+        createKeyDomainIfNotExists(filterDict)
+        name = str(filterDict['name'])
+        if 'name' in filterDict.keys():
+            del filterDict['name']
+        self.__rv = self.qry(filterDict)
+        return filterFunc(self.__rv, name)
+
 
     def add(self, updateDict):
         if type(updateDict) is list:
