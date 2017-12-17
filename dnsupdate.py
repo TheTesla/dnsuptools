@@ -57,6 +57,7 @@ class DNSUpdate:
         self.__passwdDict = {'default': 'passwd'}
         self.__rv = None
         self.__isOpened = ''
+        self.defaultTTL = 600 
         self.setUserDict(inwxUserDict)
         self.setPasswdDict(inwxPasswdDict)
 
@@ -127,17 +128,26 @@ class DNSUpdate:
             return self.__rv
         createKeyDomainIfNotExists(updateDict)
         self.__open(updateDict['domain'])
+        if 'ttl' not in updateDict:
+            updateDict['ttl'] = self.defaultTTL
         try:
             self.__rv = self.__conn.nameserver.createRecord(updateDict)
         except Exception as e:
             self.__rv = e[1]
         return self.__rv
 
-    def delete(self, deleteDict, preserveDict = []):
-        deleteRv = self.qry(deleteDict)
+    def delete(self, deleteDict, preserveDict = [], wild = False):
+        if wild is True:
+            deleteRv = self.qryWild(deleteDict)
+            preserveRv = self.qryWild(preserveDict)
+        elif callable(wild):
+            deleteRv = self.qryWild(deleteDict, wild)
+            preserveRv = self.qryWild(preserveDict, wild)
+        else:
+            deleteRv = self.qry(deleteDict)
+            preserveRv = self.qry(preserveDict)
         print(deleteRv)
         deleteIds = set(flatten(extractIds(deleteRv)))
-        preserveRv = self.qry(preserveDict)
         preserveIds = set(flatten(extractIds(preserveRv)))
         deleteOnlyIds = deleteIds - preserveIds
         self.__rv = [self.__conn.nameserver.deleteRecord({'id': e}) for e in deleteOnlyIds]
@@ -146,7 +156,7 @@ class DNSUpdate:
     def addList(self, baseRecord, contentList):
         self.add(makeDictList(baseRecord, 'content', contentList))
 
-    def delList(self, baseRecord, contentDelete = '*', contentPreserve = []):
+    def delList(self, baseRecord, contentDelete = '*', contentPreserve = [], wild = False):
         if type(contentDelete) is str:
             contentDelete = [contentDelete]
         if '*' in contentDelete:
@@ -156,11 +166,11 @@ class DNSUpdate:
         presList = makeDictList(baseRecord, 'content', contentPreserve)
         print(delList)
         print(presList)
-        self.delete(delList, presList)
+        self.delete(delList, presList, wild)
 
-    def setList(self, baseRecord, contentList):
+    def setList(self, baseRecord, contentList, deleteWild = False):
         self.addList(baseRecord, contentList)
-        self.delList(baseRecord, '*', contentList)
+        self.delList(baseRecord, '*', contentList, deleteWild)
 
 
 

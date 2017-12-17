@@ -124,6 +124,9 @@ class DNSUpTools(DNSUpdate):
         else:
             self.delTXT(name, 'v=%s %s' % (v, spfDelete), spfPreserve)
 
+    def setSPF(self, name, spf, v = 'spf1'):
+        self.setTXT(name, 'v=%s %s' % (v, spf))
+
     def addADSP(self, name, adsp):
         self.addList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
     
@@ -139,7 +142,23 @@ class DNSUpTools(DNSUpdate):
     def addDKIM(self, name, p, keyname = 'key1', v = 'DKIM1', k = 'rsa'):
         self.addTXT(str(keyname) + '._domainkey.' + str(name), 'v=%s; k=%s; p=%s' % (v, k, p)) 
 
+    def delDKIM(self, name, keynames = '*', keynamesPreserve = []):
+        if type(keynames) is str:
+            keynames = [keynames]
+        if type(keynamesPreserve) is str:
+            keynamesPreserve = [keynamesPreserve]
+        if '*' in keynamesPreserve:
+            return
+        if '*' in keynames:
+            delete = [{'name': '_domainkey.' + str(name), 'type': 'TXT'}]
+        else:
+            delete = [{'name': str(e) + '._domainkey.' + str(name), 'type': 'TXT'} for e in keynames]
+        preserve = [{'name': str(e) + '._domainkey.' + str(name)} for e in keynamesPreserve]
+        self.delete(delete, preserve, True)
 
-
+    def setDKIM(self, name, p, keyname = 'key1', v = 'DKIM1', k = 'rsa'):
+        self.addDKIM(name, p, keyname, v, k)
+        self.delDKIM(name, '*', keyname)
+    
 
 
