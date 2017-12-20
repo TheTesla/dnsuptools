@@ -3,6 +3,7 @@
 
 from dnsupdate import *
 from tlsarecgen import *
+from dkimrecgen import *
 
 import pycurl
 from StringIO import StringIO
@@ -107,14 +108,14 @@ class DNSUpTools(DNSUpdate):
     def setNS(self, name, ns):
         self.setList({'name': name, 'type': 'NS'}, ns)
 
-    def addTLSA(self, name, tlsa):
-        self.addList({'name': name, 'type': 'TLSA'}, tlsa)
+    def addTLSA(self, name, tlsa, port = '*', proto = 'tcp'):
+        self.addList({'name': tlsaName(name, port, proto), 'type': 'TLSA'}, tlsa)
 
-    def delTLSA(self, name, tlsaDelete = '*', tlsaPreserve = []):
-        self.delList({'name': name, 'type': 'TLSA'}, tlsaDelete, tlsaPreserve)
+    def delTLSA(self, name, tlsaDelete = '*', tlsaPreserve = [], port = '', proto = ''):
+        self.delList({'name': tlsaName(name, port, proto), 'type': 'TLSA'}, tlsaDelete, tlsaPreserve)
 
-    def setTLSA(self, name, tlsa):
-        self.setList({'name': name, 'type': 'TLSA'}, tlsa)
+    def setTLSA(self, name, tlsa, port = '*', proto = 'tcp'):
+        self.setList({'name': tlsaName(name, port, proto), 'type': 'TLSA'}, tlsa, True)
 
     def addTLSAfromCert(self, name, certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]): 
         self.addTLSA(name, tlsaRecordsFromCertFile(certFilenames, tlsaTypes))
@@ -152,6 +153,13 @@ class DNSUpTools(DNSUpdate):
     def addDKIM(self, name, p, keyname = 'key1', v = 'DKIM1', k = 'rsa'):
         self.addTXT(str(keyname) + '._domainkey.' + str(name), 'v=%s; k=%s; p=%s' % (v, k, p)) 
 
+    def addDKIMfromFile(self, name, filenames):
+        if type(filenames) is list:
+            for f in filenames:
+                self.addDKIMfromFile(name, f)
+        n, v, k, p = dkimFromFile(filenames)
+        self.addDKIM(name, p, n, v, k)
+
     def delDKIM(self, name, keynames = '*', keynamesPreserve = []):
         if type(keynames) is str:
             keynames = [keynames]
@@ -166,9 +174,20 @@ class DNSUpTools(DNSUpdate):
         preserve = [{'name': str(e) + '._domainkey.' + str(name)} for e in keynamesPreserve]
         self.delete(delete, preserve, True)
 
+    def delDKIMpreserveFromFile(self, name, filenames):
+        if type(filenames) is str:
+            filenames = [filenames]
+        keynamesPreserve = []
+        for f in filenames:
+            keynamesPreserve.append(delDKIMpreserveFromFile(f)[0])
+        self.delDKIM(name, '*', keynamesPreserve)
+
     def setDKIM(self, name, p, keyname = 'key1', v = 'DKIM1', k = 'rsa'):
         self.addDKIM(name, p, keyname, v, k)
         self.delDKIM(name, '*', keyname)
     
+    def setDKIMfromFile(self, name, filenames):
+        self.addDKIMfromFile(name, filenames)
+        self.delDKIMpreserveFromFile(name, filenames)
 
 

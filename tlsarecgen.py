@@ -32,5 +32,26 @@ def tlsaRecordsFromCertFile(certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1
         tlsaList.append('%s %s %s %s' % (tlsaType[0], tlsaType[1], tlsaType[2], tlsaFromCertFile(certFilenames, tlsaType[0], tlsaType[1], tlsaType[2])))
     return tlsaList
 
-
+def tlsaName(name, port = '*', proto = 'tcp'):
+    rv = ''
+    if port is None:
+        pass
+    elif '' == str(port):
+        pass
+    elif '*' == str(port): 
+        rv += '*.'
+    else:
+        if '_' == str(port)[0]:
+            port = port[1:]
+        rv += '_' + str(port) + '.'
+    if proto is None:
+        pass
+    elif '' == str(proto):
+        pass
+    else:
+        if '_' == str(proto)[0]:
+            proto = proto[1:]
+        rv += '_' + str(proto) + '.'
+    rv += str(name)
+    return rv
 
