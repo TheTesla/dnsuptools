@@ -2,6 +2,7 @@
 # -*- encoding: UTF8 -*-
 
 from dnsupdate import *
+from tlsarecgen import *
 
 import pycurl
 from StringIO import StringIO
@@ -114,6 +115,15 @@ class DNSUpTools(DNSUpdate):
 
     def setTLSA(self, name, tlsa):
         self.setList({'name': name, 'type': 'TLSA'}, tlsa)
+
+    def addTLSAfromCert(self, name, certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]): 
+        self.addTLSA(name, tlsaRecordsFromCertFile(certFilenames, tlsaTypes))
+
+    def delTLSApreserveFromCert(self, name, tlsaDelete = '*', certFilenamesPreserve = []):
+        self.delTLSA(name, tlsaDelete, (tlsaRecordsFromCertFile(certFilenamesPreserve))
+
+    def setTLSAfromCert(self, name, certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]): 
+        self.setTLSA(name, tlsaRecordsFromCertFile(certFilenames, tlsaTypes))
 
     def addSPF(self, name, spf, v = 'spf1'):
         self.addTXT(name, 'v=%s %s' % (v, spf))

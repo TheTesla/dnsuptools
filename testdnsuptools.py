@@ -19,5 +19,6 @@ dnsut.setAAAA('dynamic.entroserv.de')
 dnsut.setDKIM('dynamic.entroserv.de', '12ea212', 'key42')
 dnsut.setDKIM('dynamic.entroserv.de', '27182af', 'key23')
 dnsut.delDKIM('dynamic.entroserv.de', '*', 'key23')
+dnsut.addTLSAfromCert('dynamic.entroserv.de', 'fullchain.pem')
 
 
