@@ -18,17 +18,18 @@ def tlsaFromCertFile(certFilename, certConstr = 3, keyOnly = 0, hashType = 1):
         output = check_output(('openssl', 'sha256'), stdin=ps.stdout)
     elif 2 == hashType:
         output = check_output(('openssl', 'sha512'), stdin=ps.stdout)
-    ps.wait()
+    print(output)
+    #ps.wait()
     return output.split(' ')[1]
 
 def tlsaRecordsFromCertFile(certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]): 
+    tlsaList = []
     if type(certFilenames) is list:
-        tlsaList = []
         for e in certFilenames:
             tlsaList.extend(tlsaRecordsFromCertFile(e, tlsaTypes))
         return tlsaList
     for tlsaType in tlsaTypes:
-        tlsaList.append('%s %s %s %s' % (tlsaType[0], tlsaType[1], tlsaType[2], tlsaFromCertFile(certFilename, tlsaType[0], tlsaType[1], tlsaType[2])))
+        tlsaList.append('%s %s %s %s' % (tlsaType[0], tlsaType[1], tlsaType[2], tlsaFromCertFile(certFilenames, tlsaType[0], tlsaType[1], tlsaType[2])))
     return tlsaList
 
 
