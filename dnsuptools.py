@@ -18,6 +18,7 @@ def sanIPv6(x):
 def curlGet(url):
     buff = StringIO()
     c = pycurl.Curl()
+    c.setopt(pycurl.CONNECTTIMEOUT, 4)
     c.setopt(c.URL, str(url))
     c.setopt(c.WRITEDATA, buff)
     c.perform()
