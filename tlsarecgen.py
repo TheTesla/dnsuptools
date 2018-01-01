@@ -4,6 +4,7 @@
 from subprocess import *
 
 def tlsaFromCertFile(certFilename, certConstr = 3, keyOnly = 0, hashType = 1):
+    print(certFilename)
     certCont = check_output(('cat', str(certFilename)))
     if 2 == certConstr or 0 == certConstr:
         certCont = certCont.split('-----END CERTIFICATE-----')[1] 
