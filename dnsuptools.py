@@ -173,8 +173,9 @@ class DNSUpTools(DNSUpdate):
         if type(filenames) is list:
             for f in filenames:
                 self.addDKIMfromFile(name, f)
-        n, v, k, p = dkimFromFile(filenames)
-        self.addDKIM(name, p, n, v, k)
+	else:
+            n, v, k, p = dkimFromFile(filenames)
+            self.addDKIM(name, p, n, v, k)
 
     def delDKIM(self, name, keynames = '*', keynamesPreserve = []):
         if type(keynames) is str:
