@@ -158,6 +158,14 @@ class DNSUpTools(DNSUpdate):
         self.setList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
     
     def addDKIM(self, name, p, keyname = 'key1', v = 'DKIM1', k = 'rsa'):
+        if k is None:
+            k = 'rsa'
+        if v is None:
+            v = 'DKIM1'
+        if keyname is None:
+            keyname = 'key'
+        if p is None:
+            return
         self.addTXT(str(keyname) + '._domainkey.' + str(name), 'v=%s; k=%s; p=%s' % (v, k, p)) 
 
     def addDKIMfromFile(self, name, filenames):
