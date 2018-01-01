@@ -196,7 +196,7 @@ class DNSUpTools(DNSUpdate):
             filenames = [filenames]
         keynamesPreserve = []
         for f in filenames:
-            keynamesPreserve.append(delDKIMpreserveFromFile(f)[0])
+            keynamesPreserve.append(dkimFromFile(f)[0])
         self.delDKIM(name, '*', keynamesPreserve)
 
     def setDKIM(self, name, p, keyname = 'key1', v = 'DKIM1', k = 'rsa'):
