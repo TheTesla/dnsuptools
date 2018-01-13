@@ -39,6 +39,15 @@ def getIPv6():
         return None
     return sanIPv6(ipv6Str)
 
+def genSPF(spf, behavior = '?all', v = 'spf1'):
+    if type(spf) is str:
+        spf = [spf]
+    if v is not None:
+        spf = ['v=' + v] + spf
+    if behavior is not None:
+        spf += [behavior]
+    return ' '.join(spf)
+
 
 class DNSUpTools(DNSUpdate):
     def __init__(self):
@@ -134,8 +143,9 @@ class DNSUpTools(DNSUpdate):
             tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]
         self.setTLSA(name, tlsaRecordsFromCertFile(certFilenames, tlsaTypes))
 
-    def addSPF(self, name, spf, v = 'spf1'):
-        self.addTXT(name, 'v=%s %s' % (v, spf))
+    def addSPF(self, name, spf, behavior = '?all', v = 'spf1'):
+        txt = genSPF(spf, behavior, v)
+        self.addTXT(name, txt)
 
     def delSPF(self, name, spfDelete = '*', v = 'spf1', spfPreserve = []):
         if '*' == str(spfDelete):
@@ -143,8 +153,9 @@ class DNSUpTools(DNSUpdate):
         else:
             self.delTXT(name, 'v=%s %s' % (v, spfDelete), spfPreserve)
 
-    def setSPF(self, name, spf, v = 'spf1'):
-        self.setTXT(name, 'v=%s %s' % (v, spf))
+    def setSPF(self, name, spf, behavior = '?all', v = 'spf1'):
+        txt = genSPF(spf, behavior, v)
+        self.setTXT(name, txt)
 
     def addADSP(self, name, adsp):
         self.addList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
