@@ -9,6 +9,17 @@ import pycurl
 from StringIO import StringIO
 import re
 
+import socket
+import dns.resolver
+
+
+def qryDNS(nsName, qryName, recType):
+    resolver = dns.resolver.Resolver()
+    resolver.nameservers=[socket.gethostbyname(nsName)]
+    return [rdata for rdata in resolver.query(qryName, recType)]
+
+
+
 def sanIPv4(x):
     return re.sub('[^0-9.]', '', x)
 
@@ -49,9 +60,48 @@ def genSPF(spf, behavior = '?all', v = 'spf1'):
     return ' '.join(spf)
 
 
+def encDNSemail(x):
+    xSpl = x.split('@')
+    print(xSpl)
+    if 1 == len(xSpl):
+        return x
+    elif 1 < len(xSpl):
+        return xSpl[0].replace('.', '\\.') + '.' + xSpl[1] + '.'
+    else:
+        raise(TypeError('No valid email address')) 
+
+def decDNSemail(x):
+    if 2 == len(x.split('@')):
+        return x
+    elif 2 < len(x.split('@')):
+        raise(TypeError('No valid email address')) 
+    else:
+        xSpl = x.split('\\.')
+        y = '.'.join(xSpl[:-1]) + '.' + '@'.join(xSpl[-1].split('.', 1))
+        if '.' == y[0]:
+            y = y[1:]
+        if '.' == y[-1]:
+            return y[:-1]
+        else:
+            return y
+
 class DNSUpTools(DNSUpdate):
     def __init__(self):
         DNSUpdate.__init__(self)
+
+    def qrySOA(self, name):
+        soa = self.qry({'name': name, 'type': 'SOA'})['resData']['record'][0]
+        soaList = soa['content'].split(' ')
+        soa = qryDNS(soaList[0], name, 'SOA')[0] # extended query for last 4 values - WARNING internal nameserver update takes time, consecutive updates may result in inconsistencies
+        return {'primns': soa.mname.to_text(), 'hostmaster': decDNSemail(soa.rname.to_text()), 'serial': soa.serial, 'refresh': soa.refresh, 'retry': soa.retry, 'expire': soa.expire, 'ncttl': soa.minimum}
+        
+    def updSOA(self, name, updSOAdict):
+        soa = self.qrySOA(name)
+        soa.update(updSOAdict)
+        soa['serial'] += 1
+        soa['hostmaster'] = encDNSemail(soa['hostmaster'])
+        soaTXT = '{soa[primns]} {soa[hostmaster]} {soa[serial]:d} {soa[refresh]:d} {soa[retry]:d} {soa[expire]:d} {soa[ncttl]:d}'.format(soa = soa)
+        self.update({'name': name, 'type': 'SOA'}, {'content': soaTXT})
 
     def addA(self, name, a):
         self.addList({'name': name, 'type': 'A'}, a)
@@ -155,7 +205,8 @@ class DNSUpTools(DNSUpdate):
 
     def setSPF(self, name, spf, behavior = '?all', v = 'spf1'):
         txt = genSPF(spf, behavior, v)
-        self.setTXT(name, txt)
+        self.update({'name': name, 'type': 'TXT'}, {'content': txt})
+        #self.setTXT(name, txt)
 
     def addADSP(self, name, adsp):
         self.addList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))

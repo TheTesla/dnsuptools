@@ -3,6 +3,7 @@
 
 from inwxclient.inwx import domrobot, prettyprint, getOTP
 from passwords import *
+import re
 
 def createKeyDomainIfNotExists(d):
     if 'domain' not in d.keys():
@@ -43,6 +44,7 @@ def matchUpperLabels(rv, name):
             records.append(record)
     rv['resData']['record'] = records
     return rv
+
 
 
 
@@ -151,6 +153,19 @@ class DNSUpdate:
         preserveIds = set(flatten(extractIds(preserveRv)))
         deleteOnlyIds = deleteIds - preserveIds
         self.__rv = [self.__conn.nameserver.deleteRecord({'id': e}) for e in deleteOnlyIds]
+        return self.__rv
+
+    def update(self, baseRecord, updateDict):
+        matchRv = self.qry(baseRecord)
+        matchIds = set(flatten(extractIds(matchRv)))
+        baseRecord.update(updateDict)
+        if len(matchIds) > 0:
+            baseRecord['id'] = list(matchIds)[0]
+            del baseRecord['domain']
+            print(baseRecord)
+            self.__rv = self.__conn.nameserver.updateRecord(baseRecord)
+        else:
+            self.__rv = self.add(updateDict)
         return self.__rv
 
     def addList(self, baseRecord, contentList):
