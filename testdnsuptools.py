@@ -21,6 +21,10 @@ print(dnsut.qrySOA('entroserv.de'))
 dnsut.updSOA('entroserv.de', {'ncttl': 3603})
 
 dnsut.setSPF('dynamic.entroserv.de', ['mx','aaaa','a'])
+dnsut.addSPFentry('dynamic.entroserv.de', ['ip4:1.2.3.4','ip6:[ff:ff]'])
+print('qrySPF')
+print(dnsut.qrySPF('dynamic.entroserv.de'))
+
 dnsut.setSRV('dynamic.entroserv.de', {'port': 443, 'prio': 142, 'weight': 123, 'proto': 'tcp', 'service': 'https', 'server': 'dyn.entroserv.de'})
 print(dnsut.qrySRV('dynamic.entroserv.de'))
 #dnsut.setDKIM('dynamic.entroserv.de', '12ea212', 'key42')

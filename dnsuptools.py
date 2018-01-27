@@ -210,6 +210,18 @@ class DNSUpTools(DNSUpdate):
     #    txt = genSPF(spf, behavior, v)
     #    self.addTXT(name, txt)
 
+    def addSPFentry(self, name, spf):
+        rrQ = self.qrySPF(name)
+        spfQ = rrQ[0]['content'].split(' ')
+        spfSe = set(spfQ[1:-1])
+        spfSe.update(spf)
+        self.setSPF(name, list(spfSe), spfQ[-1], spfQ[0][2:])
+
+    def qrySPF(self, name):
+        rv = self.qry({'name': name, 'type': 'TXT'})
+        return [rr for rr in rv['resData']['record'] if 'v=spf1' in rr['content'].split(' ')]
+
+
     def delSPF(self, name, spfDelete = '*', v = 'spf1', spfPreserve = []):
         if '*' == str(spfDelete):
             self.delTXT(name)
