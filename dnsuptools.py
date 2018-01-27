@@ -16,6 +16,23 @@ import re
 import socket
 import dns.resolver
 
+def parseSPFentries(entryList):
+    entryDict = {}
+    for e in entryList:
+        if e[0] in '+-~?':
+            entryDict[e[1:]] = e[0]
+        else:
+            entryDict[e] = ''
+    return entryDict
+    
+def formatSPFentries(entryDict):
+    allVal = []
+    if 'all' in entryDict:
+        allVal = [str(entryDict['all'])+'all']
+        del entryDict['all']
+    entryList = ['{v}{k}'.format(v=v,k=k) for k, v in entryDict.items()]
+    entryList.extend(allVal)
+    return entryList
 
 def qryDNS(nsName, qryName, recType):
     resolver = dns.resolver.Resolver()
@@ -213,12 +230,13 @@ class DNSUpTools(DNSUpdate):
     def addSPFentry(self, name, spf):
         rrQ = self.qrySPF(name)
         spfQ = rrQ[0]['content'].split(' ')
-        spfSe = set(spfQ[1:-1])
-        spfSe.update(spf)
-        self.setSPF(name, list(spfSe), spfQ[-1], spfQ[0][2:])
+        spfD = parseSPFentries(spfQ[1:])
+        spfD.update(parseSPFentries(spf))
+        spfL = ' '.join(formatSPFentries(spfD))
+        self.setSPF(name, spfL, spfQ[0][2:])
 
     def qrySPF(self, name):
-        rv = self.qry({'name': '_spf.'+str(name), 'type': 'TXT'})
+        rv = self.qry({'name': str(name), 'type': 'TXT'})
         if 'record' not in rv['resData']:
             return []
         return [rr for rr in rv['resData']['record'] if 'v=spf1' in rr['content'].split(' ')]
@@ -226,13 +244,14 @@ class DNSUpTools(DNSUpdate):
 
     def delSPF(self, name, spfDelete = '*', v = 'spf1', spfPreserve = []):
         if '*' == str(spfDelete):
-            self.delTXT('_spf.'+str(name))
+            self.delTXT(str(name))
         else:
-            self.delTXT('_spf.'+str(name), 'v=%s %s' % (v, spfDelete), spfPreserve)
+            self.delTXT(str(name), 'v=%s %s' % (v, spfDelete), spfPreserve)
 
-    def setSPF(self, name, spf, behavior = '?all', v = 'spf1'):
-        txt = genSPF(spf, behavior, v)
-        self.update({'name': '_spf.'+str(name), 'type': 'TXT'}, {'content': txt})
+    def setSPF(self, name, spf, v = 'spf1'):
+        spf = ' '.join(formatSPFentries(parseSPFentries(spf)))
+        txt = genSPF(spf, None, v)
+        self.update({'name': str(name), 'type': 'TXT'}, {'content': txt})
 
     def delDMARC(self, name):
         self.delTXT('_dmarc.'+str(name))
