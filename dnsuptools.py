@@ -6,7 +6,11 @@ from tlsarecgen import *
 from dkimrecgen import *
 
 import pycurl
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 import re
 
 import socket
@@ -78,13 +82,13 @@ def encDNSemail(x):
     elif 1 < len(xSpl):
         return xSpl[0].replace('.', '\\.') + '.' + xSpl[1] + '.'
     else:
-        raise(TypeError('No valid email address')) 
+        raise(TypeError('No valid email address'))
 
 def decDNSemail(x):
     if 2 == len(x.split('@')):
         return x
     elif 2 < len(x.split('@')):
-        raise(TypeError('No valid email address')) 
+        raise(TypeError('No valid email address'))
     else:
         xSpl = x.split('\\.')
         y = '.'.join(xSpl[:-1]) + '.' + '@'.join(xSpl[-1].split('.', 1))
@@ -104,7 +108,7 @@ class DNSUpTools(DNSUpdate):
         soaList = soa['content'].split(' ')
         soa = qryDNS(soaList[0], name, 'SOA')[0] # extended query for last 4 values - WARNING internal nameserver update takes time, consecutive updates may result in inconsistencies
         return {'primns': soa.mname.to_text(), 'hostmaster': decDNSemail(soa.rname.to_text()), 'serial': soa.serial, 'refresh': soa.refresh, 'retry': soa.retry, 'expire': soa.expire, 'ncttl': soa.minimum}
-        
+
     def updSOA(self, name, updSOAdict):
         soa = self.qrySOA(name)
         soa.update(updSOAdict)
@@ -117,7 +121,7 @@ class DNSUpTools(DNSUpdate):
         self.addList({'name': name, 'type': 'A'}, a)
 
     def delA(self, name, aDelete = '*', aPreserve = []):
-        self.delList({'name': name, 'type': 'A'}, aDelete, aPreserve)    
+        self.delList({'name': name, 'type': 'A'}, aDelete, aPreserve)
 
     def setA(self, name, a = None):
         if a is None or 'auto' == a:
@@ -130,7 +134,7 @@ class DNSUpTools(DNSUpdate):
         self.addList({'name': name, 'type': 'AAAA'}, aaaa)
 
     def delAAAA(self, name, aaaaDelete = '*', aaaaPreserve = []):
-        self.delList({'name': name, 'type': 'AAAA'}, aaaaDelete, aaaaPreserve)    
+        self.delList({'name': name, 'type': 'AAAA'}, aaaaDelete, aaaaPreserve)
 
     def setAAAA(self, name, aaaa = None):
         if aaaa is None or 'auto' == aaaa:
@@ -192,7 +196,6 @@ class DNSUpTools(DNSUpdate):
             tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]
         print('name = %s' % name)
         print('certFilenames = %s' % certFilenames)
-        
         self.addTLSA(name, tlsaRecordsFromCertFile(certFilenames, tlsaTypes))
 
     def delTLSApreserveFromCert(self, name, tlsaDelete = '*', certFilenamesPreserve = []):
@@ -228,17 +231,17 @@ class DNSUpTools(DNSUpdate):
 
     def addADSP(self, name, adsp):
         self.addList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
-    
+
     def delADSP(self, name, adspDelete = '*', adspPreserve = []):
         if '*' == adspDelete:
             self.delTXT('_adsp._domainkey.' + str(name), '*', adspPreserve)
         else:
             self.delTXT('_adsp._domainkey.' + str(name), 'dkim=' + str(adspDelete), adspPreserve)
-    
+
     def setADSP(self, name, adsp):
         self.update({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, {'content': 'dkim=' + str(adsp)})
         #self.setList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
-    
+
     def addCAA(self, name, caaDict):
         self.addList({'name': str(name), 'type': 'CAA'}, genCAA(caaDict))
 
@@ -288,7 +291,7 @@ class DNSUpTools(DNSUpdate):
                 result.append(srvRR)
             resultList.append(result)
         return resultList
-            
+
     def delSRV(self, name, srvDelete, srvPreserve = []):
         deleteRv = self.qrySRV(name, srvDelete)
         preserveRv = self.qrySRV(name, srvPreserve)
@@ -314,7 +317,7 @@ class DNSUpTools(DNSUpdate):
         if type(filenames) is list:
             for f in filenames:
                 self.addDKIMfromFile(name, f)
-	else:
+        else:
             n, v, k, p = dkimFromFile(filenames)
             self.addDKIM(name, p, n, v, k)
 
@@ -343,7 +346,7 @@ class DNSUpTools(DNSUpdate):
     def setDKIM(self, name, p, keyname = 'key1', v = 'DKIM1', k = 'rsa'):
         self.addDKIM(name, p, keyname, v, k)
         self.delDKIM(name, '*', keyname)
-    
+
     def setDKIMfromFile(self, name, filenames):
         self.addDKIMfromFile(name, filenames)
         self.delDKIMpreserveFromFile(name, filenames)
