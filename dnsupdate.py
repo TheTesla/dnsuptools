@@ -168,7 +168,6 @@ class DNSUpdate:
         if len(matchIds) > 0:
             baseRecord['id'] = list(matchIds)[0]
             del baseRecord['domain']
-            print(baseRecord)
             self.__rv = self.__conn.nameserver.updateRecord(baseRecord)
         else:
             self.__rv = self.add(updateDict)

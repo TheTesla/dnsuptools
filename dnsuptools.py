@@ -206,9 +206,9 @@ class DNSUpTools(DNSUpdate):
             tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]
         self.setTLSA(name, tlsaRecordsFromCertFile(certFilenames, tlsaTypes))
 
-    def addSPF(self, name, spf, behavior = '?all', v = 'spf1'):
-        txt = genSPF(spf, behavior, v)
-        self.addTXT(name, txt)
+    #def addSPF(self, name, spf, behavior = '?all', v = 'spf1'):
+    #    txt = genSPF(spf, behavior, v)
+    #    self.addTXT(name, txt)
 
     def delSPF(self, name, spfDelete = '*', v = 'spf1', spfPreserve = []):
         if '*' == str(spfDelete):
@@ -257,7 +257,7 @@ class DNSUpTools(DNSUpdate):
         for e in srvDict:
             srv = {'prio': 10, 'weight' : 0}
             srv.update(e)
-            self.addList({'name': '_{x[service]}._{x[proto]}.{name}'.format(x=srv, name=str(name)), 'type': 'SRV'}, '{x[weight]} {x[port]} {x[server]}'.format(x=srv))
+            self.addList({'name': '_{x[service]}._{x[proto]}.{name}'.format(x=srv, name=str(name)), 'type': 'SRV', 'prio': srv['prio']}, '{x[weight]} {x[port]} {x[server]}'.format(x=srv))
 
     def qrySRV(self, name, srvDict = {}):
         qryName = ''
