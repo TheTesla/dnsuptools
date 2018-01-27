@@ -6,6 +6,7 @@ from passwords import *
 import re
 
 def createKeyDomainIfNotExists(d):
+    print(d)
     if 'domain' not in d.keys():
         d['domain'] = '.'.join(d['name'].split('.')[-2:])
 
@@ -13,7 +14,10 @@ def extractIds(rv):
     if type(rv) is list:
         return [extractIds(e) for e in rv if 'resData' in e if 'record' in e['resData']]
     if 'resData' in rv:
-        return [e['id'] for e in rv['resData']['record']]
+        if 'record' in rv['resData']:
+            return [e['id'] for e in rv['resData']['record']]
+        else:
+            return []
     return [e['id'] for e in rv]
 
 def flatgen(x):
@@ -170,7 +174,7 @@ class DNSUpdate:
             del baseRecord['domain']
             self.__rv = self.__conn.nameserver.updateRecord(baseRecord)
         else:
-            self.__rv = self.add(updateDict)
+            self.__rv = self.add(baseRecord)
         return self.__rv
 
     def addList(self, baseRecord, contentList):

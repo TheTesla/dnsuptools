@@ -218,19 +218,21 @@ class DNSUpTools(DNSUpdate):
         self.setSPF(name, list(spfSe), spfQ[-1], spfQ[0][2:])
 
     def qrySPF(self, name):
-        rv = self.qry({'name': name, 'type': 'TXT'})
+        rv = self.qry({'name': '_spf.'+str(name), 'type': 'TXT'})
+        if 'record' not in rv['resData']:
+            return []
         return [rr for rr in rv['resData']['record'] if 'v=spf1' in rr['content'].split(' ')]
 
 
     def delSPF(self, name, spfDelete = '*', v = 'spf1', spfPreserve = []):
         if '*' == str(spfDelete):
-            self.delTXT(name)
+            self.delTXT('_spf.'+str(name))
         else:
-            self.delTXT(name, 'v=%s %s' % (v, spfDelete), spfPreserve)
+            self.delTXT('_spf.'+str(name), 'v=%s %s' % (v, spfDelete), spfPreserve)
 
     def setSPF(self, name, spf, behavior = '?all', v = 'spf1'):
         txt = genSPF(spf, behavior, v)
-        self.update({'name': name, 'type': 'TXT'}, {'content': txt})
+        self.update({'name': '_spf.'+str(name), 'type': 'TXT'}, {'content': txt})
 
     def delDMARC(self, name):
         self.delTXT('_dmarc.'+str(name))
