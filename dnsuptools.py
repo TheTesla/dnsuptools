@@ -59,6 +59,16 @@ def genSPF(spf, behavior = '?all', v = 'spf1'):
         spf += [behavior]
     return ' '.join(spf)
 
+def genCAA(caaDict):
+    if type(caaDict) is dict:
+        caaDict = [caaDict]
+    caaList = []
+    for e in caaDict:
+        caa = {'flag': 0, 'tag': 'issue'}
+        caa.update(e)
+        caaStr = '{x[flag]} {x[tag]} "{x[url]}"'.format(x=caa)
+        caaList.append(caaStr)
+    return caaList
 
 def encDNSemail(x):
     xSpl = x.split('@')
@@ -206,7 +216,15 @@ class DNSUpTools(DNSUpdate):
     def setSPF(self, name, spf, behavior = '?all', v = 'spf1'):
         txt = genSPF(spf, behavior, v)
         self.update({'name': name, 'type': 'TXT'}, {'content': txt})
-        #self.setTXT(name, txt)
+
+    def delDMARC(self, name):
+        self.delTXT('_dmarc.'+str(name))
+
+    def setDMARC(self, name, dmarcDict):
+        dmarc = {'v': 'DMARC1', 'p': 'none'}
+        dmarc.update(dmarcDict)
+        dmarcStr = ';'.join(sorted(['{k}={v}'.format(k=k, v=v) for k, v in dmarc.items()], reverse=True))
+        self.update({'name': '_dmarc.'+str(name), 'type': 'TXT'}, {'content': dmarcStr})
 
     def addADSP(self, name, adsp):
         self.addList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
@@ -218,8 +236,69 @@ class DNSUpTools(DNSUpdate):
             self.delTXT('_adsp._domainkey.' + str(name), 'dkim=' + str(adspDelete), adspPreserve)
     
     def setADSP(self, name, adsp):
-        self.setList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
+        self.update({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, {'content': 'dkim=' + str(adsp)})
+        #self.setList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
     
+    def addCAA(self, name, caaDict):
+        self.addList({'name': str(name), 'type': 'CAA'}, genCAA(caaDict))
+
+    def setCAA(self, name, caaDict):
+        self.setList({'name': str(name), 'type': 'CAA'}, genCAA(caaDict))
+
+    def delCAA(self, name):
+        self.setCAA(name, [])
+
+    def addSRV(self, name, srvDict):
+        if type(srvDict) is dict:
+            srvDict = [srvDict]
+        for e in srvDict:
+            srv = {'prio': 10, 'weight' : 0}
+            srv.update(e)
+            self.addList({'name': '_{x[service]}._{x[proto]}.{name}'.format(x=srv, name=str(name)), 'type': 'SRV'}, '{x[weight]} {x[port]} {x[server]}'.format(x=srv))
+
+    def qrySRV(self, name, srvDict = {}):
+        qryName = ''
+        srv = {'type': 'SRV', 'name': name}
+        srvRv = self.qryWild(srv)
+        if type(srvDict) is dict:
+            srvDict = [srvDict]
+        resultList = []
+        for srvEntry in srvDict:
+            result = []
+            for srvRR in srvRv['resData']['record']:
+                srvRR['weight'], srvRR['port'], srvRR['server'] = srvRR['content'].split(' ')
+                service, proto = srvRR['name'].split('.')[:2]
+                srvRR['service'] = service[1:]
+                srvRR['proto'] = proto[1:]
+                if 'port' in srvDict:
+                    if srvDict['port'] != srvRR['port']:
+                        continue
+                if 'proto' in srvDict:
+                    if srvDict['proto'] != srvRR['proto']:
+                        continue
+                if 'service' in srvDict:
+                    if srvDict['service'] != srvRR['service']:
+                        continue
+                if 'prio' in srvDict:
+                    if srvDict['prio'] != srvRR['prio']:
+                        continue
+                if 'weight' in srvDict:
+                    if srvDict['weight'] != srvRR['weight']:
+                        continue
+                result.append(srvRR)
+            resultList.append(result)
+        return resultList
+            
+    def delSRV(self, name, srvDelete, srvPreserve = []):
+        deleteRv = self.qrySRV(name, srvDelete)
+        preserveRv = self.qrySRV(name, srvPreserve)
+        return self.deleteRv(deleteRv, preserveRv)
+
+    def setSRV(self, name, srvDict):
+        self.addSRV(name, srvDict)
+        self.delSRV(name, {}, srvDict)
+
+
     def addDKIM(self, name, p, keyname = 'key1', v = 'DKIM1', k = 'rsa'):
         if k is None:
             k = 'rsa'

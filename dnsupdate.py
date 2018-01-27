@@ -11,8 +11,10 @@ def createKeyDomainIfNotExists(d):
 
 def extractIds(rv):
     if type(rv) is list:
-        return [extractIds(e) for e in rv if 'record' in e['resData']]
-    return [e['id'] for e in rv['resData']['record']]
+        return [extractIds(e) for e in rv if 'resData' in e if 'record' in e['resData']]
+    if 'resData' in rv:
+        return [e['id'] for e in rv['resData']['record']]
+    return [e['id'] for e in rv]
 
 def flatgen(x):
     if type(x) is list:
@@ -149,11 +151,15 @@ class DNSUpdate:
             deleteRv = self.qry(deleteDict)
             preserveRv = self.qry(preserveDict)
         print(deleteRv)
+        return self.deleteRv(deleteRv, preserveRv)
+
+    def deleteRv(self, deleteRv, preserveRv = []):
         deleteIds = set(flatten(extractIds(deleteRv)))
         preserveIds = set(flatten(extractIds(preserveRv)))
         deleteOnlyIds = deleteIds - preserveIds
         self.__rv = [self.__conn.nameserver.deleteRecord({'id': e}) for e in deleteOnlyIds]
         return self.__rv
+
 
     def update(self, baseRecord, updateDict):
         matchRv = self.qry(baseRecord)
