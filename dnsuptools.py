@@ -39,6 +39,13 @@ def qryDNS(nsName, qryName, recType):
     resolver.nameservers=[socket.gethostbyname(nsName)]
     return [rdata for rdata in resolver.query(qryName, recType)]
 
+def parseDMARC(dmarcStr):
+    return {e.split('=')[0].replace(' ',''): e.split('=')[1].replace(' ','') for e in dmarcStr.split(';')}
+
+def formatDMARC(dmarcDict):
+    v = 'v={v}'.format(v=dmarcDict['v'])
+    del dmarcDict['v']
+    return ';'.join([v] + ['{k}={v}'.format(k=k, v=v) for k, v in dmarcDict.items()])
 
 
 def sanIPv4(x):
@@ -259,8 +266,24 @@ class DNSUpTools(DNSUpdate):
     def setDMARC(self, name, dmarcDict):
         dmarc = {'v': 'DMARC1', 'p': 'none'}
         dmarc.update(dmarcDict)
-        dmarcStr = ';'.join(sorted(['{k}={v}'.format(k=k, v=v) for k, v in dmarc.items()], reverse=True))
+        dmarcStr = formatDMARC(dmarc)
         self.update({'name': '_dmarc.'+str(name), 'type': 'TXT'}, {'content': dmarcStr})
+
+    def qryDMARC(self, name):
+        dmarcRv = self.qry({'name': '_dmarc.'+str(name), 'type': 'TXT'})
+        dmarcQ = []
+        if 'record' in dmarcRv['resData']:
+            dmarcQ = [parseDMARC(rr) for rr in dmarcRv['resData']['record']]
+        return dmarcQ
+
+    def setDMARCentry(self, name, dmarcDict):
+        q = self.qryDMARC(name)
+        dmarc = {}
+        for e in q:
+            dmarc.update(e)
+        self.setDMARC(name, dmarc) 
+
+
 
     def addADSP(self, name, adsp):
         self.addList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))

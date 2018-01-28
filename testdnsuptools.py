@@ -19,7 +19,7 @@ dnsut = DNSUpTools()
 print(dnsut.qryWild({'name': 'mysrv.entroserv.de'}))
 print(dnsut.qrySOA('entroserv.de'))
 dnsut.updSOA('entroserv.de', {'ncttl': 3603})
-
+dnsut.setDMARCentry('dynamic.entroserv.de', {'sp: ''test'})
 dnsut.setSPF('dynamic.entroserv.de', ['mx','?all','aaaa','a'])
 dnsut.addSPFentry('dynamic.entroserv.de', ['ip4:1.2.3.4','ip6:[ff:ff]'])
 print('qrySPF')
