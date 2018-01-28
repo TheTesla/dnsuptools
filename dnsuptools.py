@@ -133,7 +133,7 @@ class DNSUpTools(DNSUpdate):
         soa = qryDNS(soaList[0], name, 'SOA')[0] # extended query for last 4 values - WARNING internal nameserver update takes time, consecutive updates may result in inconsistencies
         return {'primns': soa.mname.to_text(), 'hostmaster': decDNSemail(soa.rname.to_text()), 'serial': soa.serial, 'refresh': soa.refresh, 'retry': soa.retry, 'expire': soa.expire, 'ncttl': soa.minimum}
 
-    def updSOA(self, name, updSOAdict):
+    def setSOAentry(self, name, updSOAdict):
         soa = self.qrySOA(name)
         soa.update(updSOAdict)
         soa['serial'] += 1
