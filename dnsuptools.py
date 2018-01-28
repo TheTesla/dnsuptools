@@ -239,7 +239,7 @@ class DNSUpTools(DNSUpdate):
         spfQ = rrQ[0]['content'].split(' ')
         spfD = parseSPFentries(spfQ[1:])
         spfD.update(parseSPFentries(spf))
-        spfL = ' '.join(formatSPFentries(spfD))
+        spfL = formatSPFentries(spfD)
         self.setSPF(name, spfL, spfQ[0][2:])
 
     def qrySPF(self, name):
@@ -256,8 +256,13 @@ class DNSUpTools(DNSUpdate):
             self.delTXT(str(name), 'v=%s %s' % (v, spfDelete), spfPreserve)
 
     def setSPF(self, name, spf, v = 'spf1'):
+        print(spf)
+        print(parseSPFentries(spf))
+        print(formatSPFentries(parseSPFentries(spf)))
         spf = ' '.join(formatSPFentries(parseSPFentries(spf)))
+        print(spf)
         txt = genSPF(spf, None, v)
+        print(txt)
         self.update({'name': str(name), 'type': 'TXT'}, {'content': txt})
 
     def delDMARC(self, name):
@@ -273,7 +278,7 @@ class DNSUpTools(DNSUpdate):
         dmarcRv = self.qry({'name': '_dmarc.'+str(name), 'type': 'TXT'})
         dmarcQ = []
         if 'record' in dmarcRv['resData']:
-            dmarcQ = [parseDMARC(rr) for rr in dmarcRv['resData']['record']]
+            dmarcQ = [parseDMARC(rr['content']) for rr in dmarcRv['resData']['record']]
         return dmarcQ
 
     def setDMARCentry(self, name, dmarcDict):
