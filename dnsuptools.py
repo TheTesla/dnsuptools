@@ -138,7 +138,7 @@ class DNSUpTools(DNSUpdate):
         soa.update(updSOAdict)
         soa['serial'] += 1
         soa['hostmaster'] = encDNSemail(soa['hostmaster'])
-        soaTXT = '{soa[primns]} {soa[hostmaster]} {soa[serial]:d} {soa[refresh]:d} {soa[retry]:d} {soa[expire]:d} {soa[ncttl]:d}'.format(soa = soa)
+        soaTXT = '{soa[primns]} {soa[hostmaster]} {soa[serial]} {soa[refresh]} {soa[retry]} {soa[expire]} {soa[ncttl]}'.format(soa = soa)
         self.update({'name': name, 'type': 'SOA'}, {'content': soaTXT})
 
     def addA(self, name, a):
