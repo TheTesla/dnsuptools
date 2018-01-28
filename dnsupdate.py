@@ -141,7 +141,8 @@ class DNSUpdate:
         try:
             self.__rv = self.__conn.nameserver.createRecord(updateDict)
         except Exception as e:
-            self.__rv = e[1]
+            self.__rv = e.args[1]
+            print(self.__rv)
         return self.__rv
 
     def delete(self, deleteDict, preserveDict = [], wild = False):

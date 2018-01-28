@@ -287,6 +287,7 @@ class DNSUpTools(DNSUpdate):
         dmarc = {}
         for e in q:
             dmarc.update(e)
+        dmarc.update(dmarcDict)
         self.setDMARC(name, dmarc) 
 
 
