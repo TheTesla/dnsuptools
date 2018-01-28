@@ -234,7 +234,7 @@ class DNSUpTools(DNSUpdate):
     #    txt = genSPF(spf, behavior, v)
     #    self.addTXT(name, txt)
 
-    def addSPFentry(self, name, spf):
+    def setSPFentry(self, name, spf):
         rrQ = self.qrySPF(name)
         spfQ = rrQ[0]['content'].split(' ')
         spfD = parseSPFentries(spfQ[1:])
@@ -271,6 +271,7 @@ class DNSUpTools(DNSUpdate):
     def setDMARC(self, name, dmarcDict):
         dmarc = {'v': 'DMARC1', 'p': 'none'}
         dmarc.update(dmarcDict)
+        dmarc = {k: v for k, v in dmarc.items() if '' != v}
         dmarcStr = formatDMARC(dmarc)
         self.update({'name': '_dmarc.'+str(name), 'type': 'TXT'}, {'content': dmarcStr})
 
