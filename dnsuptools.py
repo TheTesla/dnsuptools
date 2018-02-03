@@ -64,16 +64,21 @@ def curlGet(url):
     c.close()
     return str(buff.getvalue())
 
-def getIPv4():
+def getIPv4(a = 'auto'):
+    if 'auto' != a:
+        return a
     try:
         ipv4Str = curlGet('ipv4.icanhazip.com')
     except Exception as e:
         return None
     return sanIPv4(ipv4Str)
 
-def getIPv6():
+def getIPv6(aaaa = 'auto'):
+    if 'auto' != aaaa:
+        return aaaa
     try:
         ipv6Str = curlGet('ipv6.icanhazip.com')
+        print(ipv6Str)
     except Exception as e:
         return None
     return sanIPv6(ipv6Str)
@@ -123,6 +128,27 @@ def decDNSemail(x):
         else:
             return y
 
+def makeIP4(a):
+    if a is None:
+        a = 'auto'
+    if type(a) is not list:
+        a = [a]
+    a = [getIPv4(e) for e in a]
+    a = [e for e in a if e is not None]
+    return a
+
+def makeIP6(aaaa):
+    if aaaa is None:
+        aaaa = 'auto'
+    if type(aaaa) is not list:
+        aaaa = [aaaa]
+    print(aaaa)
+    aaaa = [getIPv6(e) for e in aaaa]
+    aaaa = [e for e in aaaa if e is not None]
+    print(aaaa)
+    return aaaa
+
+
 class DNSUpTools(DNSUpdate):
     def __init__(self):
         DNSUpdate.__init__(self)
@@ -141,30 +167,26 @@ class DNSUpTools(DNSUpdate):
         soaTXT = '{soa[primns]} {soa[hostmaster]} {soa[serial]} {soa[refresh]} {soa[retry]} {soa[expire]} {soa[ncttl]}'.format(soa = soa)
         self.update({'name': name, 'type': 'SOA'}, {'content': soaTXT})
 
-    def addA(self, name, a):
+    def addA(self, name, a = 'auto'):
+        a = makeIP4(a)
         self.addList({'name': name, 'type': 'A'}, a)
 
     def delA(self, name, aDelete = '*', aPreserve = []):
         self.delList({'name': name, 'type': 'A'}, aDelete, aPreserve)
 
-    def setA(self, name, a = None):
-        if a is None or 'auto' == a:
-            a = getIPv4()
-        if a is None:
-            return
+    def setA(self, name, a = 'auto'):
+        a = makeIP4(a)
         self.setList({'name': name, 'type': 'A'}, a)
 
     def addAAAA(self, name, aaaa):
+        aaaa = makeIP6(aaaa)
         self.addList({'name': name, 'type': 'AAAA'}, aaaa)
 
     def delAAAA(self, name, aaaaDelete = '*', aaaaPreserve = []):
         self.delList({'name': name, 'type': 'AAAA'}, aaaaDelete, aaaaPreserve)
 
-    def setAAAA(self, name, aaaa = None):
-        if aaaa is None or 'auto' == aaaa:
-            aaaa = getIPv6()
-        if aaaa is None:
-            return
+    def setAAAA(self, name, aaaa = 'auto'):
+        aaaa = makeIP6(aaaa)
         self.setList({'name': name, 'type': 'AAAA'}, aaaa)
 
     def addMX(self, name, mx, prio = 10):
