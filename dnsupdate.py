@@ -41,6 +41,11 @@ def makeDictList(baseDict, entryName, entryList):
         dictList.append(extDict)
     return dictList
 
+def defaultDictList(baseDict, dictList):
+    for i, e in enumerate(dictList):
+        dictList[i].update(baseDict)
+    return dictList
+
 def matchUpperLabels(rv, name):
     records = []
     for i, record in enumerate(rv['resData']['record']):
@@ -192,6 +197,12 @@ class DNSUpdate:
         print(delList)
         print(presList)
         self.delete(delList, presList, wild)
+
+    def delDictList(self, baseRecord, dictListDelete = [{}], dictListPreserve = [], wild = False):
+        delList = defaultDictList(baseRecord, dictListDelete)
+        presList = defaultDictList(baseRecord, dictListPreserve)
+        self.delete(delList, presList, wild)
+
 
     def setList(self, baseRecord, contentList, deleteWild = False):
         self.addList(baseRecord, contentList)
