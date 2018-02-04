@@ -337,6 +337,7 @@ class DNSUpTools(DNSUpdate):
         self.setCAA(name, [])
 
     def addSRV(self, name, srvDict):
+        print(srvDict)
         if type(srvDict) is dict:
             srvDict = [srvDict]
         for e in srvDict:
