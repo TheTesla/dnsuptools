@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- encoding: UTF8 -*-
 
-from inwxclient.inwx import domrobot, prettyprint, getOTP
-from passwords import *
+from .inwxclient.inwx import domrobot, prettyprint, getOTP
+from .passwords import *
 import re
 
 def createKeyDomainIfNotExists(d):

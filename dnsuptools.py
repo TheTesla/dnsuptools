@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- encoding: UTF8 -*-
 
-from dnsupdate import *
-from tlsarecgen import *
-from dkimrecgen import *
+from .dnsupdate import *
+from .tlsarecgen import *
+from .dkimrecgen import *
 
 import pycurl
 try:
