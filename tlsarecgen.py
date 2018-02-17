@@ -2,9 +2,10 @@
 # -*- encoding: UTF8 -*-
 
 from subprocess import *
+from .simplelogger import simplelogger as log
 
 def tlsaFromCertFile(certFilename, certConstr = 3, keyOnly = 0, hashType = 1):
-    print(certFilename)
+    log.debug(certFilename)
     certCont = check_output(('cat', str(certFilename)))
     if 2 == certConstr or 0 == certConstr:
         certCont = certCont.split('-----END CERTIFICATE-----')[1] 
@@ -19,7 +20,7 @@ def tlsaFromCertFile(certFilename, certConstr = 3, keyOnly = 0, hashType = 1):
         output = check_output(('openssl', 'sha256'), stdin=ps.stdout)
     elif 2 == hashType:
         output = check_output(('openssl', 'sha512'), stdin=ps.stdout)
-    print(output)
+    log.debug(output)
     #ps.wait()
     return output.split(' ')[1]
 

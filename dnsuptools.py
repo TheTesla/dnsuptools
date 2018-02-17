@@ -4,6 +4,7 @@
 from .dnsupdate import *
 from .tlsarecgen import *
 from .dkimrecgen import *
+from .simplelogger import simplelogger as log 
 
 import pycurl
 try:
@@ -78,7 +79,7 @@ def getIPv6(aaaa = 'auto'):
         return aaaa
     try:
         ipv6Str = curlGet('ipv6.icanhazip.com')
-        print(ipv6Str)
+        log.debug(ipv6Str)
     except Exception as e:
         return None
     return sanIPv6(ipv6Str)
@@ -105,7 +106,7 @@ def genCAA(caaDict):
 
 def encDNSemail(x):
     xSpl = x.split('@')
-    print(xSpl)
+    log.debug(xSpl)
     if 1 == len(xSpl):
         return x
     elif 1 < len(xSpl):
@@ -142,10 +143,10 @@ def makeIP6(aaaa):
         aaaa = 'auto'
     if type(aaaa) is not list:
         aaaa = [aaaa]
-    print(aaaa)
+    log.debug(aaaa)
     aaaa = [getIPv6(e) for e in aaaa]
     aaaa = [e for e in aaaa if e is not None]
-    print(aaaa)
+    log.debug(aaaa)
     return aaaa
 
 
@@ -240,8 +241,8 @@ class DNSUpTools(DNSUpdate):
     def addTLSAfromCert(self, name, certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]):
         if 'auto' == str(tlsaTypes):
             tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]
-        print('name = %s' % name)
-        print('certFilenames = %s' % certFilenames)
+        log.debug('name = %s' % name)
+        log.debug('certFilenames = %s' % certFilenames)
         self.addTLSA(name, tlsaRecordsFromCertFile(certFilenames, tlsaTypes))
 
     def delTLSApreserveFromCert(self, name, tlsaDelete = '*', certFilenamesPreserve = []):
@@ -278,13 +279,13 @@ class DNSUpTools(DNSUpdate):
             self.delTXT(str(name), 'v=%s %s' % (v, spfDelete), spfPreserve)
 
     def setSPF(self, name, spf, v = 'spf1'):
-        print(spf)
-        print(parseSPFentries(spf))
-        print(formatSPFentries(parseSPFentries(spf)))
+        log.debug(spf)
+        log.debug(parseSPFentries(spf))
+        log.debug(formatSPFentries(parseSPFentries(spf)))
         spf = ' '.join(formatSPFentries(parseSPFentries(spf)))
-        print(spf)
+        log.debug(spf)
         txt = genSPF(spf, None, v)
-        print(txt)
+        log.debug(txt)
         self.update({'name': str(name), 'type': 'TXT'}, {'content': txt})
 
     def delDMARC(self, name):
@@ -337,7 +338,7 @@ class DNSUpTools(DNSUpdate):
         self.setCAA(name, [])
 
     def addSRV(self, name, srvDict):
-        print(srvDict)
+        log.debug(srvDict)
         if type(srvDict) is dict:
             srvDict = [srvDict]
         for e in srvDict:

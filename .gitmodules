@@ -1,3 +1,6 @@
 [submodule "inwxclient"]
 	path = inwxclient
 	url = https://github.com/inwx/python2.7-client.git
+[submodule "simplelogger"]
+	path = simplelogger
+	url = https://github.com/TheTesla/simplelogger.git

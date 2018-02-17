@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- encoding: UTF8 -*-
 
-from .inwxclient.inwx import domrobot, prettyprint, getOTP
+from .inwxclient.inwx import domrobot 
+from .simplelogger import simplelogger as log 
 from .passwords import *
-import re
 
 def createKeyDomainIfNotExists(d):
-    print(d)
+    log.debug(d)
     if 'domain' not in d.keys():
         d['domain'] = '.'.join(d['name'].split('.')[-2:])
 
@@ -120,7 +120,9 @@ class DNSUpdate:
             return self.__rv
         createKeyDomainIfNotExists(filterDict)
         self.__open(filterDict['domain'])
+        log.debug(filterDict)
         self.__rv = self.__conn.nameserver.info(filterDict)
+        log.debug(self.__rv)
         return self.__rv
 
     def qryWild(self, filterDict, filterFunc = matchUpperLabels):
@@ -144,10 +146,12 @@ class DNSUpdate:
         if 'ttl' not in updateDict:
             updateDict['ttl'] = self.defaultTTL
         try:
+            log.info('createRecord {}'.format(updateDict))
             self.__rv = self.__conn.nameserver.createRecord(updateDict)
+            log.debug(self.__rv)
         except Exception as e:
             self.__rv = e.args[1]
-            print(self.__rv)
+            log.debug(self.__rv)
         return self.__rv
 
     def delete(self, deleteDict, preserveDict = [], wild = False):
@@ -160,14 +164,16 @@ class DNSUpdate:
         else:
             deleteRv = self.qry(deleteDict)
             preserveRv = self.qry(preserveDict)
-        print(deleteRv)
+        log.debug(deleteRv)
         return self.deleteRv(deleteRv, preserveRv)
 
     def deleteRv(self, deleteRv, preserveRv = []):
         deleteIds = set(flatten(extractIds(deleteRv)))
         preserveIds = set(flatten(extractIds(preserveRv)))
         deleteOnlyIds = deleteIds - preserveIds
+        log.info('deleteRecords {}'.format(deleteOnlyIds))
         self.__rv = [self.__conn.nameserver.deleteRecord({'id': e}) for e in deleteOnlyIds]
+        log.debug(self.__rv)
         return self.__rv
 
 
@@ -178,9 +184,12 @@ class DNSUpdate:
         if len(matchIds) > 0:
             baseRecord['id'] = list(matchIds)[0]
             del baseRecord['domain']
+            log.info('updateRecord {}'.format(baseRecord))
             self.__rv = self.__conn.nameserver.updateRecord(baseRecord)
+            log.debug(self.__rv)
         else:
             self.__rv = self.add(baseRecord)
+        
         return self.__rv
 
     def addList(self, baseRecord, contentList):
@@ -194,8 +203,8 @@ class DNSUpdate:
         else:
             delList = makeDictList(baseRecord, 'content', contentDelete)
         presList = makeDictList(baseRecord, 'content', contentPreserve)
-        print(delList)
-        print(presList)
+        log.debug(delList)
+        log.debug(presList)
         self.delete(delList, presList, wild)
 
     def delDictList(self, baseRecord, dictListDelete = [{}], dictListPreserve = [], wild = False):
