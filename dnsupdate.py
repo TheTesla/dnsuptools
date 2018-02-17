@@ -3,6 +3,10 @@
 
 from .inwxclient.inwx import domrobot 
 from .simplelogger import simplelogger as log 
+
+inwxUserDict = {'default': 'user'}
+inwxPasswdDict = {'default': 'passwd'}
+
 try:
     from .passwords import *
 except:
