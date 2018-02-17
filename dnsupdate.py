@@ -3,7 +3,10 @@
 
 from .inwxclient.inwx import domrobot 
 from .simplelogger import simplelogger as log 
-from .passwords import *
+try:
+    from .passwords import *
+except:
+    log.info('no passwords.py file for dnsuptools default login')
 
 def createKeyDomainIfNotExists(d):
     log.debug(d)
