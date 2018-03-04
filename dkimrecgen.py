@@ -5,7 +5,6 @@ from subprocess import *
 import re
 
 def dkimFromFile(dkimFilename):
-    print(dkimFilename)
     dkimCont = check_output(('cat', str(dkimFilename)))
     dkimCont = re.sub('[\"\n\r\t\(\)\ ]', '', dkimCont)
     n = dkimCont.split('._domainkey')[0]
