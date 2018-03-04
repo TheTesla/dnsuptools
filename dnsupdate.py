@@ -14,6 +14,8 @@ except:
 
 def createKeyDomainIfNotExists(d):
     log.debug(d)
+    if 'name' not in d.keys():
+        return
     if 'domain' not in d.keys():
         d['domain'] = '.'.join(d['name'].split('.')[-2:])
 
@@ -126,7 +128,8 @@ class DNSUpdate:
             self.__rv = [self.qry(e) for e in filterDict]
             return self.__rv
         createKeyDomainIfNotExists(filterDict)
-        self.__open(filterDict['domain'])
+        if 'domain' in filterDict:
+            self.__open(filterDict['domain'])
         log.debug(filterDict)
         self.__rv = self.__conn.nameserver.info(filterDict)
         log.debug(self.__rv)
@@ -153,11 +156,15 @@ class DNSUpdate:
         if 'ttl' not in updateDict:
             updateDict['ttl'] = self.defaultTTL
         try:
-            log.info('createRecord {}'.format(updateDict))
+            log.debug('createRecord {}'.format(updateDict))
+            infoRecord(updateDict, 'add')
             self.__rv = self.__conn.nameserver.createRecord(updateDict)
             log.debug(self.__rv)
         except Exception as e:
-            self.__rv = e.args[1]
+            if 1 < len(e.args):
+                self.__rv = e.args[1]
+            else:
+                self.__rv = e.args
             log.debug(self.__rv)
         return self.__rv
 
@@ -178,7 +185,10 @@ class DNSUpdate:
         deleteIds = set(flatten(extractIds(deleteRv)))
         preserveIds = set(flatten(extractIds(preserveRv)))
         deleteOnlyIds = deleteIds - preserveIds
-        log.info('deleteRecords {}'.format(deleteOnlyIds))
+        log.debug('deleteRecords {}'.format(deleteOnlyIds))
+        for e in deleteOnlyIds:
+            rr = self.qry({'recordId': e})
+            infoRecord(rr['resData']['record'][0], 'delete')
         self.__rv = [self.__conn.nameserver.deleteRecord({'id': e}) for e in deleteOnlyIds]
         log.debug(self.__rv)
         return self.__rv
@@ -191,7 +201,8 @@ class DNSUpdate:
         if len(matchIds) > 0:
             baseRecord['id'] = list(matchIds)[0]
             del baseRecord['domain']
-            log.info('updateRecord {}'.format(baseRecord))
+            log.debug('updateRecord {}'.format(baseRecord))
+            infoRecord(baseRecord, 'update')
             self.__rv = self.__conn.nameserver.updateRecord(baseRecord)
             log.debug(self.__rv)
         else:
@@ -226,4 +237,10 @@ class DNSUpdate:
 
 
 
-
+def infoRecord(recordDict, operation = 'add'):
+    rrType = recordDict['type']
+    v = recordDict['content'].split('v=')
+    if 1 < len(v):
+        v = v[1].split(';')[0].split(' ')[0].split('1')[0]
+        rrType = v
+    log.info('{} {} record for {}'.format(operation, rrType, recordDict['name']))
