@@ -413,6 +413,7 @@ class DNSUpTools(DNSUpdate):
             keynames = [keynames]
         if type(keynamesPreserve) is str:
             keynamesPreserve = [keynamesPreserve]
+        keynamesPreserve.append('_adsp')
         if '*' in keynamesPreserve:
             return
         if '*' in keynames:
