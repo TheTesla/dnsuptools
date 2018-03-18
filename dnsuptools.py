@@ -17,6 +17,17 @@ import re
 import socket
 import dns.resolver
 
+def parseSRVentry(record):
+    key = record['name']
+    keyList = key.split('.')
+    val = record['content']
+    valList = val.split(' ')
+    srv = {'service': keyList[0], 'proto': keyList[1], 'weight': valList[0], 'port': valList[1], 'server': valList[2], 'prio': record['prio']}
+    return srv
+
+
+
+
 def parseSPFentries(entryList):
     entryDict = {}
     for e in entryList:
@@ -360,28 +371,32 @@ class DNSUpTools(DNSUpdate):
                 service, proto = srvRR['name'].split('.')[:2]
                 srvRR['service'] = service[1:]
                 srvRR['proto'] = proto[1:]
-                if 'port' in srvDict:
-                    if srvDict['port'] != srvRR['port']:
+                if 'port' in srvEntry:
+                    if srvEntry['port'] != srvRR['port']:
                         continue
-                if 'proto' in srvDict:
-                    if srvDict['proto'] != srvRR['proto']:
+                if 'proto' in srvEntry:
+                    if srvEntry['proto'] != srvRR['proto']:
                         continue
-                if 'service' in srvDict:
-                    if srvDict['service'] != srvRR['service']:
+                if 'service' in srvEntry:
+                    if srvEntry['service'] != srvRR['service']:
                         continue
-                if 'prio' in srvDict:
-                    if srvDict['prio'] != srvRR['prio']:
+                if 'prio' in srvEntry:
+                    if srvEntry['prio'] != srvRR['prio']:
                         continue
-                if 'weight' in srvDict:
-                    if srvDict['weight'] != srvRR['weight']:
+                if 'weight' in srvEntry:
+                    if srvEntry['weight'] != srvRR['weight']:
                         continue
                 result.append(srvRR)
             resultList.append(result)
         return resultList
 
     def delSRV(self, name, srvDelete, srvPreserve = []):
+        log.debug(srvDelete)
+        log.debug(srvPreserve)
         deleteRv = self.qrySRV(name, srvDelete)
         preserveRv = self.qrySRV(name, srvPreserve)
+        log.debug(deleteRv)
+        log.debug(preserveRv)
         return self.deleteRv(deleteRv, preserveRv)
 
     def setSRV(self, name, srvDict):
