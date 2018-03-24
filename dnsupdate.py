@@ -21,13 +21,16 @@ def createKeyDomainIfNotExists(d):
 
 def extractIds(rv):
     if type(rv) is list:
-        return [extractIds(e) for e in rv if 'resData' in e if 'record' in e['resData']]
+        #return [extractIds(e) for e in rv if 'resData' in e if 'record' in e['resData']]
+        return [extractIds(e) for e in rv]
     if 'resData' in rv:
         if 'record' in rv['resData']:
-            return [e['id'] for e in rv['resData']['record']]
+            return [extractIds(e) for e in rv['resData']['record']]
         else:
             return []
-    return [e['id'] for e in rv]
+    log.debug(rv)
+    return rv['id']
+    #return [e['id'] for e in rv if 'id' in e]
 
 def flatgen(x):
     if type(x) is list:
