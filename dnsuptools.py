@@ -22,10 +22,16 @@ def parseSRVentry(record):
     keyList = key.split('.')
     val = record['content']
     valList = val.split(' ')
-    srv = {'service': keyList[0], 'proto': keyList[1], 'weight': valList[0], 'port': valList[1], 'server': valList[2], 'prio': record['prio']}
+    srv = {'service': keyList[0][1:], 'proto': keyList[1][1:], 'weight': valList[0], 'port': valList[1], 'server': valList[2], 'prio': record['prio']}
     return srv
 
-
+def isSubDict(subDict, contentDict):
+    for k, v in subDict.items():
+        if k not in contentDict:
+            return False
+        if str(v) != str(contentDict[k]):
+            return False
+    return True
 
 
 def parseSPFentries(entryList):
@@ -184,6 +190,7 @@ class DNSUpTools(DNSUpdate):
         self.addList({'name': name, 'type': 'A'}, a)
 
     def delA(self, name, aDelete = '*', aPreserve = []):
+        aPreserve = makeIP4(aPreserve)
         self.delList({'name': name, 'type': 'A'}, aDelete, aPreserve)
 
     def setA(self, name, a = 'auto'):
@@ -195,6 +202,7 @@ class DNSUpTools(DNSUpdate):
         self.addList({'name': name, 'type': 'AAAA'}, aaaa)
 
     def delAAAA(self, name, aaaaDelete = '*', aaaaPreserve = []):
+        aaaaPreserve = makeIP6(aaaaPreserve)
         self.delList({'name': name, 'type': 'AAAA'}, aaaaDelete, aaaaPreserve)
 
     def setAAAA(self, name, aaaa = 'auto'):
@@ -263,10 +271,6 @@ class DNSUpTools(DNSUpdate):
         if 'auto' == str(tlsaTypes):
             tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]
         self.setTLSA(name, tlsaRecordsFromCertFile(certFilenames, tlsaTypes))
-
-    #def addSPF(self, name, spf, behavior = '?all', v = 'spf1'):
-    #    txt = genSPF(spf, behavior, v)
-    #    self.addTXT(name, txt)
 
     def setSPFentry(self, name, spf):
         rrQ = self.qrySPF(name)
@@ -337,7 +341,6 @@ class DNSUpTools(DNSUpdate):
 
     def setADSP(self, name, adsp):
         self.update({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, {'content': 'dkim=' + str(adsp)})
-        #self.setList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
 
     def addCAA(self, name, caaDict):
         self.addList({'name': str(name), 'type': 'CAA'}, genCAA(caaDict))
@@ -369,27 +372,11 @@ class DNSUpTools(DNSUpdate):
         for srvEntry in srvDict:
             result = []
             for srvRR in srvRv['resData']['record']:
-                srvRR['weight'], srvRR['port'], srvRR['server'] = srvRR['content'].split(' ')
-                service, proto = srvRR['name'].split('.')[:2]
-                srvRR['service'] = service[1:]
-                srvRR['proto'] = proto[1:]
+                srvRR.update(parseSRVentry(srvRR))
                 log.debug(srvEntry)
                 log.debug(srvRR)
-                if 'port' in srvEntry:
-                    if str(srvEntry['port']) != str(srvRR['port']):
-                        continue
-                if 'proto' in srvEntry:
-                    if str(srvEntry['proto']) != str(srvRR['proto']):
-                        continue
-                if 'service' in srvEntry:
-                    if str(srvEntry['service']) != str(srvRR['service']):
-                        continue
-                if 'prio' in srvEntry:
-                    if str(srvEntry['prio']) != str(srvRR['prio']):
-                        continue
-                if 'weight' in srvEntry:
-                    if str(srvEntry['weight']) != str(srvRR['weight']):
-                        continue
+                if not isSubDict(srvEntry, srvRR):
+                    continue
                 result.append(srvRR)
             resultList.append(result)
         log.debug(resultList)
