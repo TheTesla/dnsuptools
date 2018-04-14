@@ -209,14 +209,20 @@ class DNSUpTools(DNSUpdate):
         aaaa = makeIP6(aaaa)
         self.setList({'name': name, 'type': 'AAAA'}, aaaa)
 
-    def addMX(self, name, mx, prio = 10):
-        self.addList({'name': name, 'type': 'MX', 'prio': prio}, mx)
+    #def addMX(self, name, mx, prio = 10):
+    #    self.addList({'name': name, 'type': 'MX', 'prio': prio}, mx)
 
-    def delMX(self, name, mxDelete = '*', mxPreserve = [], prio = None):
-        if prio is None:
-            self.delList({'name': name, 'type': 'MX'}, mxDelete, mxPreserve)
-        else:
-            self.delList({'name': name, 'type': 'MX', 'prio': prio}, mxDelete, mxPreserve)
+    def addMX(self, name, mx):
+        self.addDictList({'name': name, 'type': 'MX', 'prio': 10}, mx)
+
+    #def delMX(self, name, mxDelete = '*', mxPreserve = [], prio = None):
+    #    if prio is None:
+    #        self.delList({'name': name, 'type': 'MX'}, mxDelete, mxPreserve)
+    #    else:
+    #        self.delList({'name': name, 'type': 'MX', 'prio': prio}, mxDelete, mxPreserve)
+
+    def delMX(self, name, mxDelete = [{}], mxPreserve = []):
+        self.delDictList({'name': name, 'type': 'MX'}, mxDelete, mxPreserve)
 
     def setMX(self, name, mx, prio = 10):
         self.setList({'name': name, 'type': 'MX', 'prio': prio}, mx)

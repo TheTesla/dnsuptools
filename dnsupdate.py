@@ -21,7 +21,6 @@ def createKeyDomainIfNotExists(d):
 
 def extractIds(rv):
     if type(rv) is list:
-        #return [extractIds(e) for e in rv if 'resData' in e if 'record' in e['resData']]
         return [extractIds(e) for e in rv]
     if 'resData' in rv:
         if 'record' in rv['resData']:
@@ -30,7 +29,6 @@ def extractIds(rv):
             return []
     log.debug(rv)
     return rv['id']
-    #return [e['id'] for e in rv if 'id' in e]
 
 def flatgen(x):
     if type(x) is list:
@@ -54,9 +52,14 @@ def makeDictList(baseDict, entryName, entryList):
     return dictList
 
 def defaultDictList(baseDict, dictList):
+    if dictList is dict:
+        dictList = [dictList]
+    rvDictList = []
     for i, e in enumerate(dictList):
-        dictList[i].update(baseDict)
-    return dictList
+        extDict = dict(baseDict)
+        extDict.update(dictList[i])
+        rvDictList.append(extDict)
+    return rvDictList
 
 def matchUpperLabels(rv, name):
     records = []
@@ -216,6 +219,12 @@ class DNSUpdate:
     def addList(self, baseRecord, contentList):
         self.add(makeDictList(baseRecord, 'content', contentList))
 
+
+    def addDictList(self, baseRecord, dictList):
+        addList = defaultDictList(baseRecord, dictList)
+        self.add(addList)
+
+
     def delList(self, baseRecord, contentDelete = '*', contentPreserve = [], wild = False):
         if type(contentDelete) is str:
             contentDelete = [contentDelete]
@@ -247,3 +256,4 @@ def infoRecord(recordDict, operation = 'add'):
         v = v[1].split(';')[0].split(' ')[0].split('1')[0]
         rrType = v
     log.info('{} {} record for {}'.format(operation, rrType, recordDict['name']))
+
