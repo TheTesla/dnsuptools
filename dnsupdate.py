@@ -41,16 +41,6 @@ def flatgen(x):
 def flatten(x):
     return [e for e in flatgen(x)]
 
-def makeDictList(baseDict, entryName, entryList):
-    if type(entryList) is not list:
-        entryList = [entryList]
-    dictList = []
-    for e in entryList:
-        extDict = dict(baseDict)
-        extDict.update({str(entryName): e})
-        dictList.append(extDict)
-    return dictList
-
 def defaultDictList(baseDict, dictList):
     if dictList is dict:
         dictList = [dictList]
@@ -63,6 +53,8 @@ def defaultDictList(baseDict, dictList):
 
 def matchUpperLabels(rv, name):
     records = []
+    if 'record' not in rv['resData']:
+        return rv
     for i, record in enumerate(rv['resData']['record']):
         if name.count('.') > record['name'].count('.'):
             continue
@@ -70,8 +62,6 @@ def matchUpperLabels(rv, name):
             records.append(record)
     rv['resData']['record'] = records
     return rv
-
-
 
 
 class DNSUpdate:
@@ -127,7 +117,6 @@ class DNSUpdate:
 
     def close(self):
         self.__isOpened = ''
-        
 
     def qry(self, filterDict):
         if type(filterDict) is list:
@@ -151,7 +140,6 @@ class DNSUpdate:
             del filterDict['name']
         self.__rv = self.qry(filterDict)
         return filterFunc(self.__rv, name)
-
 
     def add(self, updateDict):
         if type(updateDict) is list:
@@ -199,7 +187,6 @@ class DNSUpdate:
         log.debug(self.__rv)
         return self.__rv
 
-
     def update(self, baseRecord, updateDict):
         matchRv = self.qry(baseRecord)
         matchIds = set(flatten(extractIds(matchRv)))
@@ -213,26 +200,25 @@ class DNSUpdate:
             log.debug(self.__rv)
         else:
             self.__rv = self.add(baseRecord)
-        
         return self.__rv
 
     def addList(self, baseRecord, contentList):
-        self.add(makeDictList(baseRecord, 'content', contentList))
-
+        if type(contentList) is not list:
+            contentList = [contentList]
+        self.addDictList(baseRecord, [{'content': e} for e in contentList])
 
     def addDictList(self, baseRecord, dictList):
         addList = defaultDictList(baseRecord, dictList)
         self.add(addList)
-
-
+    
     def delList(self, baseRecord, contentDelete = '*', contentPreserve = [], wild = False):
         if type(contentDelete) is str:
             contentDelete = [contentDelete]
         if '*' in contentDelete:
             delList = baseRecord
         else:
-            delList = makeDictList(baseRecord, 'content', contentDelete)
-        presList = makeDictList(baseRecord, 'content', contentPreserve)
+            delList = defaultDictList(baseRecord, [{'content': e} for e in contentDelete])
+        presList = defaultDictList(baseRecord, [{'content': e} for e in contentPreserve])
         log.debug(delList)
         log.debug(presList)
         self.delete(delList, presList, wild)
@@ -242,11 +228,9 @@ class DNSUpdate:
         presList = defaultDictList(baseRecord, dictListPreserve)
         self.delete(delList, presList, wild)
 
-
     def setList(self, baseRecord, contentList, deleteWild = False):
         self.addList(baseRecord, contentList)
         self.delList(baseRecord, '*', contentList, deleteWild)
-
 
 
 def infoRecord(recordDict, operation = 'add'):

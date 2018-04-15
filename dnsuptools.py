@@ -121,6 +121,16 @@ def genCAA(caaDict):
         caaList.append(caaStr)
     return caaList
 
+def parseCAA(caaRR):
+    caaStr = caaRR['content']
+    log.debug(caaStr)
+    caa = {}
+    caa['flag'], caa['tag'], caa['url'] = caaStr.split(' ')
+    caa['url'] = caa['url'][1:-1]
+    caa = {str(k): str(v) for k, v in caa.items()}
+    log.debug(caa)
+    return caa
+
 def encDNSemail(x):
     xSpl = x.split('@')
     log.debug(xSpl)
@@ -194,8 +204,8 @@ class DNSUpTools(DNSUpdate):
         self.delList({'name': name, 'type': 'A'}, aDelete, aPreserve)
 
     def setA(self, name, a = 'auto'):
-        a = makeIP4(a)
-        self.setList({'name': name, 'type': 'A'}, a)
+        self.addA(name, a)
+        self.delA(name, '*', a)
 
     def addAAAA(self, name, aaaa):
         aaaa = makeIP6(aaaa)
@@ -206,26 +216,18 @@ class DNSUpTools(DNSUpdate):
         self.delList({'name': name, 'type': 'AAAA'}, aaaaDelete, aaaaPreserve)
 
     def setAAAA(self, name, aaaa = 'auto'):
-        aaaa = makeIP6(aaaa)
-        self.setList({'name': name, 'type': 'AAAA'}, aaaa)
-
-    #def addMX(self, name, mx, prio = 10):
-    #    self.addList({'name': name, 'type': 'MX', 'prio': prio}, mx)
+        self.addAAAA(name, aaaa)
+        self.delAAAA(name, '*', aaaa)
 
     def addMX(self, name, mx):
         self.addDictList({'name': name, 'type': 'MX', 'prio': 10}, mx)
 
-    #def delMX(self, name, mxDelete = '*', mxPreserve = [], prio = None):
-    #    if prio is None:
-    #        self.delList({'name': name, 'type': 'MX'}, mxDelete, mxPreserve)
-    #    else:
-    #        self.delList({'name': name, 'type': 'MX', 'prio': prio}, mxDelete, mxPreserve)
-
     def delMX(self, name, mxDelete = [{}], mxPreserve = []):
         self.delDictList({'name': name, 'type': 'MX'}, mxDelete, mxPreserve)
 
-    def setMX(self, name, mx, prio = 10):
-        self.setList({'name': name, 'type': 'MX', 'prio': prio}, mx)
+    def setMX(self, name, mx):
+        self.addMX(name, mx)
+        self.delMX(name, [{}], mx)
 
     def addCNAME(self, name, cname):
         self.addList({'name': name, 'type': 'CNAME'}, cname)
@@ -234,7 +236,8 @@ class DNSUpTools(DNSUpdate):
         self.delList({'name': name, 'type': 'CNAME'}, cnameDelete, cnamePreserve)
 
     def setCNAME(self, name, cname):
-        self.setList({'name': name, 'type': 'CNAME'}, cname)
+        self.addCNAME(name, cname)
+        self.delCNAME(name, '*', cname)
 
     def addTXT(self, name, txt):
         self.addList({'name': name, 'type': 'TXT'}, txt)
@@ -243,7 +246,8 @@ class DNSUpTools(DNSUpdate):
         self.delList({'name': name, 'type': 'TXT'}, txtDelete, txtPreserve)
 
     def setTXT(self, name, txt):
-        self.setList({'name': name, 'type': 'TXT'}, txt)
+        self.addTXT(name, txt)
+        self.delTXT(name, '*', txt)
 
     def addNS(self, name, ns):
         self.addList({'name': name, 'type': 'NS'}, ns)
@@ -252,7 +256,8 @@ class DNSUpTools(DNSUpdate):
         self.delList({'name': name, 'type': 'NS'}, nsDelete, nsPreserve)
 
     def setNS(self, name, ns):
-        self.setList({'name': name, 'type': 'NS'}, ns)
+        self.addNS(name, ns)
+        self.delNS(anme, '*', ns)
 
     def addTLSA(self, name, tlsa, port = '*', proto = 'tcp'):
         self.addList({'name': tlsaName(name, port, proto), 'type': 'TLSA'}, tlsa)
@@ -352,10 +357,18 @@ class DNSUpTools(DNSUpdate):
         self.addList({'name': str(name), 'type': 'CAA'}, genCAA(caaDict))
 
     def setCAA(self, name, caaDict):
-        self.setList({'name': str(name), 'type': 'CAA'}, genCAA(caaDict))
+        self.addCAA(name, caaDict)
+        self.delCAA(name, [{}], caaDict)
 
-    def delCAA(self, name):
-        self.setCAA(name, [])
+    def qryCAA(self, name, caaDict = {}):
+        return self.qryRR(str(name), 'CAA', parseCAA, caaDict)
+
+    def delCAA(self, name, caaDelete = [{}], caaPreserve = []):
+        deleteRv = self.qryCAA(name, caaDelete)
+        log.debug(deleteRv)
+        preserveRv = self.qryCAA(name, caaPreserve)
+        log.debug(preserveRv)
+        return self.deleteRv(deleteRv, preserveRv)
 
     def addSRV(self, name, srvDict):
         log.debug(srvDict)
@@ -366,27 +379,35 @@ class DNSUpTools(DNSUpdate):
             srv.update(e)
             self.addList({'name': '_{x[service]}._{x[proto]}.{name}'.format(x=srv, name=str(name)), 'type': 'SRV', 'prio': srv['prio']}, '{x[weight]} {x[port]} {x[server]}'.format(x=srv))
 
-    def qrySRV(self, name, srvDict = {}):
+    def qryRR(self, name, rrType, parser, rrDict = {}):
         log.debug(name)
-        log.debug(srvDict)
+        log.debug(rrDict)
         qryName = ''
-        srv = {'type': 'SRV', 'name': name}
-        srvRv = self.qryWild(srv)
-        if type(srvDict) is dict:
-            srvDict = [srvDict]
+        #rr = {'type': rrType, 'name': name}
+        rr = {'name': name}
+        log.debug(rr)
+        rrRv = self.qryWild(rr)
+        if type(rrDict) is dict:
+            rrDict = [rrDict]
         resultList = []
-        for srvEntry in srvDict:
+        for entry in rrDict:
             result = []
-            for srvRR in srvRv['resData']['record']:
-                srvRR.update(parseSRVentry(srvRR))
-                log.debug(srvEntry)
-                log.debug(srvRR)
-                if not isSubDict(srvEntry, srvRR):
+            for rr in rrRv['resData']['record']:
+                # workarround for {type: 'CAA'} query bug of inwx client
+                if not isSubDict({'type': rrType, 'name': name}, rr):
                     continue
-                result.append(srvRR)
+                rr.update(parser(rr))
+                log.debug(entry)
+                log.debug(rr)
+                if not isSubDict(entry, rr):
+                    continue
+                result.append(rr)
             resultList.append(result)
         log.debug(resultList)
         return resultList
+
+    def qrySRV(self, name, srvDict = {}):
+        return self.qryRR(name, 'SRV', parseSRVentry, srvDict)
 
     def delSRV(self, name, srvDelete, srvPreserve = []):
         log.debug(srvDelete)
@@ -400,7 +421,6 @@ class DNSUpTools(DNSUpdate):
     def setSRV(self, name, srvDict):
         self.addSRV(name, srvDict)
         self.delSRV(name, {}, srvDict)
-
 
     def addDKIM(self, name, p, keyname = 'key1', v = 'DKIM1', k = 'rsa'):
         if k is None:
