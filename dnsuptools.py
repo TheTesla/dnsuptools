@@ -259,8 +259,14 @@ class DNSUpTools(DNSUpdate):
         self.addNS(name, ns)
         self.delNS(anme, '*', ns)
 
-    def addTLSA(self, name, tlsa, port = '*', proto = 'tcp'):
-        self.addList({'name': tlsaName(name, port, proto), 'type': 'TLSA'}, tlsa)
+    #def addTLSA(self, name, tlsa, port = '*', proto = 'tcp'):
+    #    self.addList({'name': tlsaName(name, port, proto), 'type': 'TLSA'}, tlsa)
+
+    def addTLSA(self, name, tlsaDictList):
+        if type(tlsaDictList) is list:
+            tlsaDictList = [tlsaDictList]
+        for e in tlsaDictList:
+            self.addList({'name': tlsaName(name, e['port'], e['proto']), 'type': 'TLSA'}, e['tlsa'])
 
     def delTLSA(self, name, tlsaDelete = '*', tlsaPreserve = [], port = '', proto = ''):
         self.delList({'name': tlsaName(name, port, proto), 'type': 'TLSA'}, tlsaDelete, tlsaPreserve)
@@ -273,7 +279,7 @@ class DNSUpTools(DNSUpdate):
             tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]
         log.debug('name = %s' % name)
         log.debug('certFilenames = %s' % certFilenames)
-        self.addTLSA(name, tlsaRecordsFromCertFile(certFilenames, tlsaTypes))
+        self.addTLSA(name, [{'tlsa': e, 'port': '*', 'proto': 'tcp'} for e in tlsaRecordsFromCertFile(certFilenames, tlsaTypes)])
 
     def delTLSApreserveFromCert(self, name, tlsaDelete = '*', certFilenamesPreserve = []):
         self.delTLSA(name, tlsaDelete, tlsaRecordsFromCertFile(certFilenamesPreserve))
