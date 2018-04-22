@@ -151,14 +151,16 @@ class DNSUpdate:
             updateDict['ttl'] = self.defaultTTL
         try:
             log.debug('createRecord {}'.format(updateDict))
-            infoRecord(updateDict, 'add')
             self.__rv = self.__conn.nameserver.createRecord(updateDict)
+            infoRecord(updateDict, 'add (new)')
             log.debug(self.__rv)
         except Exception as e:
             if 1 < len(e.args):
                 self.__rv = e.args[1]
             else:
                 self.__rv = e.args
+            if 2302 == self.__rv['code']:
+                infoRecord(updateDict, 'add (exists)')
             log.debug(self.__rv)
         return self.__rv
 
@@ -227,6 +229,15 @@ class DNSUpdate:
         delList = defaultDictList(baseRecord, dictListDelete)
         presList = defaultDictList(baseRecord, dictListPreserve)
         self.delete(delList, presList, wild)
+
+    def setDictList(self, baseRecord, dictListDelete = [{}], dictListAdd = [], wild = False):
+        self.addDictList(baseRecord, dictListAdd)
+        self.delDictList(baseRecord, dictListDelete, dictListAdd, wild)
+
+    # this may be not usefull, because of update id association on multiple matches:
+    #def updDictList(self, baseRecord, dictListDelete = [{}], dictListUpd = [], wild = False):
+    #    pass
+
 
     def setList(self, baseRecord, contentList, deleteWild = False):
         self.addList(baseRecord, contentList)

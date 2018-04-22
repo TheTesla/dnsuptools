@@ -310,6 +310,7 @@ class DNSUpTools(DNSUpdate):
         else:
             self.delTXT(str(name), 'v=%s %s' % (v, spfDelete), spfPreserve)
 
+    # only one SPF record allowed
     def setSPF(self, name, spf, v = 'spf1'):
         log.debug(spf)
         log.debug(parseSPFentries(spf))
@@ -322,7 +323,8 @@ class DNSUpTools(DNSUpdate):
 
     def delDMARC(self, name):
         self.delTXT('_dmarc.'+str(name))
-
+    
+    # only one DMARC record allowed
     def setDMARC(self, name, dmarcDict):
         dmarc = {'v': 'DMARC1', 'p': 'none'}
         dmarc.update(dmarcDict)
@@ -347,8 +349,8 @@ class DNSUpTools(DNSUpdate):
 
 
 
-    def addADSP(self, name, adsp):
-        self.addList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
+    #def addADSP(self, name, adsp):
+    #    self.addList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
 
     def delADSP(self, name, adspDelete = '*', adspPreserve = []):
         if '*' == adspDelete:
@@ -356,6 +358,7 @@ class DNSUpTools(DNSUpdate):
         else:
             self.delTXT('_adsp._domainkey.' + str(name), 'dkim=' + str(adspDelete), adspPreserve)
 
+    # only one ADSP record allowed
     def setADSP(self, name, adsp):
         self.update({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, {'content': 'dkim=' + str(adsp)})
 
