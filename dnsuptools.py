@@ -259,14 +259,14 @@ class DNSUpTools(DNSUpdate):
         self.addNS(name, ns)
         self.delNS(anme, '*', ns)
 
-    #def addTLSA(self, name, tlsa, port = '*', proto = 'tcp'):
-    #    self.addList({'name': tlsaName(name, port, proto), 'type': 'TLSA'}, tlsa)
+    def addTLSA(self, name, tlsa, port = '*', proto = 'tcp'):
+        self.addList({'name': tlsaName(name, port, proto), 'type': 'TLSA'}, tlsa)
 
-    def addTLSA(self, name, tlsaDictList):
-        if type(tlsaDictList) is list:
-            tlsaDictList = [tlsaDictList]
-        for e in tlsaDictList:
-            self.addList({'name': tlsaName(name, e['port'], e['proto']), 'type': 'TLSA'}, e['tlsa'])
+    #def addTLSA(self, name, tlsaDictList):
+    #    if type(tlsaDictList) is list:
+    #        tlsaDictList = [tlsaDictList]
+    #    for e in tlsaDictList:
+    #        self.addList({'name': tlsaName(name, e['port'], e['proto']), 'type': 'TLSA'}, e['tlsa'])
 
     def delTLSA(self, name, tlsaDelete = '*', tlsaPreserve = [], port = '', proto = ''):
         self.delList({'name': tlsaName(name, port, proto), 'type': 'TLSA'}, tlsaDelete, tlsaPreserve)
