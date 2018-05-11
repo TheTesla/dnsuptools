@@ -326,6 +326,10 @@ class DNSUpTools(DNSUpdate):
     
     # only one DMARC record allowed
     def setDMARC(self, name, dmarcDict):
+        log.debug(dmarcDict)
+        if {} == dmarcDict:
+            self.delDMARC(name)
+            return
         dmarc = {'v': 'DMARC1', 'p': 'none'}
         dmarc.update(dmarcDict)
         dmarc = {k: v for k, v in dmarc.items() if '' != v}
@@ -344,7 +348,11 @@ class DNSUpTools(DNSUpdate):
         dmarc = {}
         for e in q:
             dmarc.update(e)
-        dmarc.update(dmarcDict)
+        if '' in dmarcDict:
+            dmarc = dict(dmarcDict)
+            del dmarc['']
+        else:
+            dmarc.update(dmarcDict)
         self.setDMARC(name, dmarc) 
 
 
