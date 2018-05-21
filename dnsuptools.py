@@ -35,6 +35,7 @@ def isSubDict(subDict, contentDict):
 
 
 def parseSPFentries(entryList):
+    print(entryList)
     entryDict = {}
     for e in entryList:
         if e[0] in '+-~?':
@@ -296,6 +297,8 @@ class DNSUpTools(DNSUpdate):
         spfQ = rrQ[0]['content'].split(' ')
         spfSqry = set(spfQ[1:])
         spfSdel = set(spfDEL)
+        if '*' in spfSdel:
+            spfSqry = {}
         spfS = {e for e in spfSqry if e not in spfSdel}
         spfD = parseSPFentries(spfS)
         spfD.update(parseSPFentries(set(spfADD)))
