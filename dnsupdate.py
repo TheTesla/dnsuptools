@@ -249,6 +249,9 @@ def infoRecord(recordDict, operation = 'add'):
     v = recordDict['content'].split('v=')
     if 1 < len(v):
         v = v[1].split(';')[0].split(' ')[0].split('1')[0]
-        rrType = v
-    log.info('{} {} record for {}'.format(operation, rrType, recordDict['name']))
+        rrType = v.upper()
+    if 'content' in recordDict:
+        log.info('{} {} for {} : {}'.format(operation, rrType, recordDict['name'], recordDict['content']))
+    else:
+        log.info('{} {} for {}'.format(operation, rrType, recordDict['name']))
 

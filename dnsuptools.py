@@ -290,6 +290,8 @@ class DNSUpTools(DNSUpdate):
         self.setTLSA(name, tlsaRecordsFromCertFile(certFilenames, tlsaTypes))
 
     def setSPFentry(self, name, spfADD, spfDEL = {}):
+        if 0 == len(spfADD) and 0 == len(spfDEL):
+            return
         rrQ = self.qrySPF(name)
         spfQ = rrQ[0]['content'].split(' ')
         spfSqry = set(spfQ[1:])
