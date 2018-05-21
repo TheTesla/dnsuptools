@@ -289,13 +289,18 @@ class DNSUpTools(DNSUpdate):
             tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]
         self.setTLSA(name, tlsaRecordsFromCertFile(certFilenames, tlsaTypes))
 
-    def setSPFentry(self, name, spf):
+    def setSPFentry(self, name, spfADD, spfDEL = {}):
         rrQ = self.qrySPF(name)
         spfQ = rrQ[0]['content'].split(' ')
-        spfD = parseSPFentries(spfQ[1:])
-        spfD.update(parseSPFentries(spf))
+        spfSqry = set(spfQ[1:])
+        spfSdel = set(spfDEL)
+        spfS = {e for e in spfSqry if e not in spfSdel}
+        spfD = parseSPFentries(spfS)
+        spfD.update(parseSPFentries(set(spfADD)))
         spfL = formatSPFentries(spfD)
         self.setSPF(name, spfL, spfQ[0][2:])
+
+
 
     def qrySPF(self, name):
         rv = self.qry({'name': str(name), 'type': 'TXT'})
