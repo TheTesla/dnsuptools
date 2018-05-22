@@ -189,6 +189,17 @@ class DNSUpdate:
         log.debug(self.__rv)
         return self.__rv
 
+
+    def updById(self, baseRecord, updateDict, rrID):
+        baseRecord = dict(baseRecord)
+        baseRecord.update(updateDict)
+        baseRecord['id'] = rrID
+        log.debug('updateRecord {}'.format(baseRecord))
+        infoRecord(baseRecord, 'update')
+        self.__rv = self.__conn.nameserver.updateRecord(baseRecord)
+        log.debug(self.__rv)
+        return self.__rv
+
     def update(self, baseRecord, updateDict):
         matchRv = self.qry(baseRecord)
         matchIds = set(flatten(extractIds(matchRv)))

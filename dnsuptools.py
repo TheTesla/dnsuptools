@@ -12,7 +12,7 @@ try:
 except ImportError:
     from io import StringIO
 
-import re
+#import re
 
 import socket
 import dns.resolver
@@ -105,6 +105,8 @@ def getIPv6(aaaa = 'auto'):
 def genSPF(spf, behavior = '?all', v = 'spf1'):
     if type(spf) is str:
         spf = [spf]
+    if type(spf) is set:
+        spf = list(spf)
     if v is not None:
         spf = ['v=' + v] + spf
     if behavior is not None:
@@ -294,7 +296,9 @@ class DNSUpTools(DNSUpdate):
         if 0 == len(spfADD) and 0 == len(spfDEL):
             return
         rrQ = self.qrySPF(name)
+        print(rrQ)
         spfQ = rrQ[0]['content'].split(' ')
+        spfID = rrQ[0]['id']
         spfSqry = set(spfQ[1:])
         spfSdel = set(spfDEL)
         if '*' in spfSdel:
@@ -303,7 +307,7 @@ class DNSUpTools(DNSUpdate):
         spfD = parseSPFentries(spfS)
         spfD.update(parseSPFentries(set(spfADD)))
         spfL = formatSPFentries(spfD)
-        self.setSPF(name, spfL, spfQ[0][2:])
+        self.setSPF(name, spfL, spfID, spfQ[0][2:])
 
 
 
@@ -321,15 +325,14 @@ class DNSUpTools(DNSUpdate):
             self.delTXT(str(name), 'v=%s %s' % (v, spfDelete), spfPreserve)
 
     # only one SPF record allowed
-    def setSPF(self, name, spf, v = 'spf1'):
-        log.debug(spf)
-        log.debug(parseSPFentries(spf))
-        log.debug(formatSPFentries(parseSPFentries(spf)))
+    def setSPF(self, name, spf, rrID, v = 'spf1'):
+        if 0 == len(spf):
+            self.delSPF(name)
+            return
+        print(spf)
         spf = ' '.join(formatSPFentries(parseSPFentries(spf)))
-        log.debug(spf)
         txt = genSPF(spf, None, v)
-        log.debug(txt)
-        self.update({'name': str(name), 'type': 'TXT'}, {'content': txt})
+        self.updById({'name': str(name), 'type': 'TXT'}, {'content': txt}, rrID)
 
     def delDMARC(self, name):
         self.delTXT('_dmarc.'+str(name))
