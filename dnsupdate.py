@@ -193,6 +193,9 @@ class DNSUpdate:
     def updById(self, baseRecord, updateDict, rrID):
         baseRecord = dict(baseRecord)
         baseRecord.update(updateDict)
+        if rrID is None:
+            self.add(baseRecord)
+            return
         baseRecord['id'] = rrID
         log.debug('updateRecord {}'.format(baseRecord))
         infoRecord(baseRecord, 'update')

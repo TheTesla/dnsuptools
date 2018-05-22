@@ -297,6 +297,9 @@ class DNSUpTools(DNSUpdate):
             return
         rrQ = self.qrySPF(name)
         print(rrQ)
+        if 0 == len(rrQ):
+            self.setSPF(name, parseSPFentries(set(spfADD)))
+            return
         spfQ = rrQ[0]['content'].split(' ')
         spfID = rrQ[0]['id']
         spfSqry = set(spfQ[1:])
@@ -325,7 +328,7 @@ class DNSUpTools(DNSUpdate):
             self.delTXT(str(name), 'v=%s %s' % (v, spfDelete), spfPreserve)
 
     # only one SPF record allowed
-    def setSPF(self, name, spf, rrID, v = 'spf1'):
+    def setSPF(self, name, spf, rrID = None, v = 'spf1'):
         if 0 == len(spf):
             self.delSPF(name)
             return
