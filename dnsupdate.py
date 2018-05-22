@@ -189,6 +189,8 @@ class DNSUpdate:
         log.debug(self.__rv)
         return self.__rv
 
+    def delById(self, rrID):
+        return self.__conn.nameserver.deleteRecord({'id': rrID})
 
     def updById(self, baseRecord, updateDict, rrID):
         baseRecord = dict(baseRecord)

@@ -330,7 +330,9 @@ class DNSUpTools(DNSUpdate):
     # only one SPF record allowed
     def setSPF(self, name, spf, rrID = None, v = 'spf1'):
         if 0 == len(spf):
-            self.delSPF(name)
+            if rrID is None:
+                return
+            self.delById(rrID)
             return
         print(spf)
         spf = ' '.join(formatSPFentries(parseSPFentries(spf)))
