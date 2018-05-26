@@ -38,9 +38,10 @@ def flatten(x):
     return [e for e in flatgen(x)]
 
 def defaultDictList(baseDict, dictList):
-    if dictList is dict:
+    if type(dictList) is dict:
         dictList = [dictList]
     rvDictList = []
+    print(dictList)
     for i, e in enumerate(dictList):
         extDict = dict(baseDict)
         extDict.update(dictList[i])
@@ -155,8 +156,8 @@ class DNSUpdate:
     # id     in recordDict -> update
     # id not in recordDict -> add
     def updOrAdd(self, recordDict):
-        self.__rv = upd(recordDict)
-        self.__rv.extend(add(recordDict))
+        self.__rv = self.upd(recordDict)
+        self.__rv.extend(self.add(recordDict))
         return self.__rv
 
     def updOrAddDictList(self, baseRecord, updateDictWithId):

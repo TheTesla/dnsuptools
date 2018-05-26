@@ -185,9 +185,10 @@ class DNSUpTools(DNSUpdate):
 
     def qrySOA(self, name):
         soa = self.qry({'name': name, 'type': 'SOA'})['resData']['record'][0]
+        rrID = soa['id']
         soaList = soa['content'].split(' ')
         soa = qryDNS(soaList[0], name, 'SOA')[0] # extended query for last 4 values - WARNING internal nameserver update takes time, consecutive updates may result in inconsistencies
-        return {'primns': soa.mname.to_text(), 'hostmaster': decDNSemail(soa.rname.to_text()), 'serial': soa.serial, 'refresh': soa.refresh, 'retry': soa.retry, 'expire': soa.expire, 'ncttl': soa.minimum}
+        return {'primns': soa.mname.to_text(), 'hostmaster': decDNSemail(soa.rname.to_text()), 'serial': soa.serial, 'refresh': soa.refresh, 'retry': soa.retry, 'expire': soa.expire, 'ncttl': soa.minimum, 'id': rrID}
 
     def setSOAentry(self, name, updSOAdict):
         soa = self.qrySOA(name)
@@ -196,7 +197,7 @@ class DNSUpTools(DNSUpdate):
         soa['serial'] += 1
         soa['hostmaster'] = encDNSemail(soa['hostmaster'])
         soaTXT = '{soa[primns]} {soa[hostmaster]} {soa[serial]} {soa[refresh]} {soa[retry]} {soa[expire]} {soa[ncttl]}'.format(soa = soa)
-        self.update({'name': name, 'type': 'SOA'}, {'content': soaTXT})
+        self.updOrAddDictList({'name': name, 'type': 'SOA'}, {'content': soaTXT, 'id': soa['id']})
 
     def addA(self, name, a = 'auto'):
         a = makeIP4(a)
