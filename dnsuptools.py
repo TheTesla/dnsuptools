@@ -35,7 +35,6 @@ def isSubDict(subDict, contentDict):
 
 
 def parseSPFentries(entryList):
-    print(entryList)
     entryDict = {}
     for e in entryList:
         if e[0] in '+-~?':
@@ -192,6 +191,7 @@ class DNSUpTools(DNSUpdate):
 
     def setSOAentry(self, name, updSOAdict):
         soa = self.qrySOA(name)
+        print(soa)
         soa.update(updSOAdict)
         soa['serial'] += 1
         soa['hostmaster'] = encDNSemail(soa['hostmaster'])
@@ -296,7 +296,6 @@ class DNSUpTools(DNSUpdate):
         if 0 == len(spfADD) and 0 == len(spfDEL):
             return
         rrQ = self.qrySPF(name)
-        print(rrQ)
         if 0 == len(rrQ):
             self.setSPF(name, parseSPFentries(set(spfADD)))
             return
@@ -334,7 +333,6 @@ class DNSUpTools(DNSUpdate):
                 return
             self.delById(rrID)
             return
-        print(spf)
         spf = ' '.join(formatSPFentries(parseSPFentries(spf)))
         txt = genSPF(spf, None, v)
         updR = {'content': txt}

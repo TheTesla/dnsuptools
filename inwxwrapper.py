@@ -3,16 +3,10 @@
 
 from .inwxclient.inwx import domrobot 
 from .simplelogger import simplelogger as log 
+from .dnshelpers import createKeyDomainIfNotExists
 
 inwxUserDict = {'default': 'user'}
 inwxPasswdDict = {'default': 'passwd'}
-
-def createKeyDomainIfNotExists(d):
-    log.debug(d)
-    if 'name' not in d.keys():
-        return
-    if 'domain' not in d.keys():
-        d['domain'] = '.'.join(d['name'].split('.')[-2:])
 
 class INWXwrapper:
     '''Class allows updating inwx zone entries'''
@@ -90,10 +84,19 @@ class INWXwrapper:
         self.__loggedInCredentials = {}
         self.__openedDomain = ''
 
+
+    def autologin(self, recordDict):
+        recordDict = dict(recordDict)
+        if 'name' in recordDict:
+            createKeyDomainIfNotExists(recordDict)
+        if 'domain' in recordDict:
+            self.login(recordDict['domain'])
+
+
+
     # Yes, login also for info needed!
     def info(self, infoDict):
-        createKeyDomainIfNotExists(infoDict)
-        self.login(infoDict['domain'])
+        self.autologin(infoDict)
         return self.__conn.nameserver.info(infoDict)
 
     def create(self, createDict):
@@ -107,19 +110,12 @@ class INWXwrapper:
     #          know record id after info() needing login, automatically 
     #          happen by providing domain or name
     def delete(self, deleteDict):
-        if 'name' in deleteDict:
-            createKeyDomainIfNotExists(deleteDict)
-        if 'domain' in deleteDict:
-            self.login(deleteDict['domain'])
+        self.autologin(deleteDict)
         return self.__conn.nameserver.deleteRecord(deleteDict)
 
     def update(self, updateDict):
-        print(updateDict)
-        if 'name' in updateDict:
-            createKeyDomainIfNotExists(updateDict)
-        print(updateDict)
+        self.autologin(updateDict)
         if 'domain' in updateDict:
-            self.login(updateDict['domain'])
             del updateDict['domain'] 
         return self.__conn.nameserver.updateRecord(updateDict)
 

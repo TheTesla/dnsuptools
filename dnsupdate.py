@@ -4,6 +4,7 @@
 from .inwxclient.inwx import domrobot 
 from .simplelogger import simplelogger as log 
 from .inwxwrapper import INWXwrapper
+from .dnshelpers import createKeyDomainIfNotExists
 
 
 inwxUserDict = {'default': 'user'}
@@ -13,13 +14,6 @@ try:
     from .passwords import *
 except:
     log.info('no passwords.py file for dnsuptools default login')
-
-def createKeyDomainIfNotExists(d):
-    log.debug(d)
-    if 'name' not in d.keys():
-        return
-    if 'domain' not in d.keys():
-        d['domain'] = '.'.join(d['name'].split('.')[-2:])
 
 def extractIds(rv):
     if type(rv) is list:
@@ -67,7 +61,7 @@ def matchUpperLabels(rv, name):
 
 
 class DNSUpdate:
-    '''Class allows updating inwx zone entries'''
+    '''Class allows updating zone entries'''
     def __init__(self):
         self.handler = None
         self.defaultTTL = 600 
@@ -84,10 +78,8 @@ class DNSUpdate:
         if type(filterDict) is list:
             self.__rv = [self.qry(e) for e in filterDict]
             return self.__rv
-        createKeyDomainIfNotExists(filterDict)
-        #if 'domain' in filterDict:
-            #self.__open(filterDict['domain'])
         log.debug(filterDict)
+        createKeyDomainIfNotExists(filterDict)
         self.__rv = self.handler.info(filterDict)
         log.debug(self.__rv)
         return self.__rv
@@ -96,8 +88,8 @@ class DNSUpdate:
         if type(filterDict) is list:
             self.__rv = [self.qryWild(e, filterFunc) for e in filterDict]
             return self.__rv
-        createKeyDomainIfNotExists(filterDict)
         name = str(filterDict['name'])
+        createKeyDomainIfNotExists(filterDict)
         if 'name' in filterDict.keys():
             del filterDict['name']
         self.__rv = self.qry(filterDict)
@@ -107,8 +99,6 @@ class DNSUpdate:
         if type(updateDict) is list:
             self.__rv = [self.add(e) for e in updateDict]
             return self.__rv
-        createKeyDomainIfNotExists(updateDict)
-        #self.__open(updateDict['domain'])
         if 'ttl' not in updateDict:
             updateDict['ttl'] = self.defaultTTL
         try:
@@ -182,7 +172,6 @@ class DNSUpdate:
             del baseRecord['domain']
             log.debug('updateRecord {}'.format(baseRecord))
             infoRecord(baseRecord, 'update')
-            #self.handler.__INWXwrapper_conn.update(baseRecord)
             self.__rv = self.handler.update(baseRecord)
             log.debug(self.__rv)
         else:
