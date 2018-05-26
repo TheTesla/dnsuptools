@@ -41,7 +41,6 @@ def defaultDictList(baseDict, dictList):
     if type(dictList) is dict:
         dictList = [dictList]
     rvDictList = []
-    print(dictList)
     for i, e in enumerate(dictList):
         extDict = dict(baseDict)
         extDict.update(dictList[i])

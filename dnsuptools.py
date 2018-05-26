@@ -376,10 +376,6 @@ class DNSUpTools(DNSUpdate):
         self.setDMARC(name, dmarc) 
 
 
-
-    #def addADSP(self, name, adsp):
-    #    self.addList({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, 'dkim=' + str(adsp))
-
     def delADSP(self, name, adspDelete = '*', adspPreserve = []):
         if '*' == adspDelete:
             self.delTXT('_adsp._domainkey.' + str(name), '*', adspPreserve)
