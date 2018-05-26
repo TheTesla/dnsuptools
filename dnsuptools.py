@@ -337,7 +337,10 @@ class DNSUpTools(DNSUpdate):
         print(spf)
         spf = ' '.join(formatSPFentries(parseSPFentries(spf)))
         txt = genSPF(spf, None, v)
-        self.updById({'name': str(name), 'type': 'TXT'}, {'content': txt}, rrID)
+        updR = {'content': txt}
+        if rrID is not None:
+            updR['id'] = rrID
+        self.updOrAddDictList({'name': str(name), 'type': 'TXT'}, updR)
 
     def delDMARC(self, name):
         self.delTXT('_dmarc.'+str(name))

@@ -3,6 +3,8 @@
 
 from .inwxclient.inwx import domrobot 
 from .simplelogger import simplelogger as log 
+from .inwxwrapper import INWXwrapper
+
 
 inwxUserDict = {'default': 'user'}
 inwxPasswdDict = {'default': 'passwd'}
@@ -67,66 +69,26 @@ def matchUpperLabels(rv, name):
 class DNSUpdate:
     '''Class allows updating inwx zone entries'''
     def __init__(self):
-        global inwxUserDict
-        global inwxPasswdDict
-        self.__apiUrl = 'https://api.domrobot.com/xmlrpc/'
-        self.__conn = None
-        self.__userDict = {'default': 'user'}
-        self.__passwdDict = {'default': 'passwd'}
-        self.__rv = None
-        self.__isOpened = ''
+        self.handler = None
         self.defaultTTL = 600 
-        self.setUserDict(inwxUserDict)
-        self.setPasswdDict(inwxPasswdDict)
 
-    def setApiUrl(self, apiUrl):
-        self.__apiUrl = apiUrl
-
-    def setUser(self, user, domain = 'default'):
-        self.__userDict[str(domain)] = user
-
-    def setUserDict(self, userDict):
-        self.__userDict = userDict
-
-    def setPasswd(self, passwd, domain = 'default'):
-        self.__passwdDict[str(domain)] = passwd
-
-    def setPasswdDict(self, passwdDict):
-        self.__passwdDict = passwdDict
-
-    def getPasswd(self, domain):
-        domain = str(domain)
-        if domain not in self.__passwdDict.keys():
-            domain = 'default'
-        return self.__passwdDict[domain]
-
-    def getUser(self, domain):
-        domain = str(domain)
-        if domain not in self.__userDict.keys():
-            domain = 'default'
-        return self.__userDict[domain]
-
-    def __open(self, domain):
-        if self.__isOpened == domain:
+    def setHandler(self, handler):
+        if type(handler) is str:
+            if 'inwx' == handler:
+                self.setHandler(INWXwrapper())
             return
-        self.__conn = domrobot(self.__apiUrl, False)
-        self.__rv = self.__conn.account.login({'lang': 'en', 'user': self.getUser(domain), 'pass': self.getPasswd(domain)})
-        if 1000 != self.__rv['code']:
-            return
-        self.__isOpened = domain
+        self.handler = handler
 
-    def close(self):
-        self.__isOpened = ''
 
     def qry(self, filterDict):
         if type(filterDict) is list:
             self.__rv = [self.qry(e) for e in filterDict]
             return self.__rv
         createKeyDomainIfNotExists(filterDict)
-        if 'domain' in filterDict:
-            self.__open(filterDict['domain'])
+        #if 'domain' in filterDict:
+            #self.__open(filterDict['domain'])
         log.debug(filterDict)
-        self.__rv = self.__conn.nameserver.info(filterDict)
+        self.__rv = self.handler.info(filterDict)
         log.debug(self.__rv)
         return self.__rv
 
@@ -146,14 +108,15 @@ class DNSUpdate:
             self.__rv = [self.add(e) for e in updateDict]
             return self.__rv
         createKeyDomainIfNotExists(updateDict)
-        self.__open(updateDict['domain'])
+        #self.__open(updateDict['domain'])
         if 'ttl' not in updateDict:
             updateDict['ttl'] = self.defaultTTL
         try:
             log.debug('createRecord {}'.format(updateDict))
-            self.__rv = self.__conn.nameserver.createRecord(updateDict)
-            infoRecord(updateDict, 'add (new)')
-            log.debug(self.__rv)
+            if 'id' not in updateDict:
+                self.__rv = self.handler.create(updateDict)
+                infoRecord(updateDict, 'add (new)')
+                log.debug(self.__rv)
         except Exception as e:
             if 1 < len(e.args):
                 self.__rv = e.args[1]
@@ -185,25 +148,30 @@ class DNSUpdate:
         for e in deleteOnlyIds:
             rr = self.qry({'recordId': e})
             infoRecord(rr['resData']['record'][0], 'delete')
-        self.__rv = [self.__conn.nameserver.deleteRecord({'id': e}) for e in deleteOnlyIds]
+        self.__rv = [self.delById(e) for e in deleteOnlyIds]
         log.debug(self.__rv)
         return self.__rv
 
     def delById(self, rrID):
-        return self.__conn.nameserver.deleteRecord({'id': rrID})
+        return self.handler.delete({'id': rrID})
 
-    def updById(self, baseRecord, updateDict, rrID):
-        baseRecord = dict(baseRecord)
-        baseRecord.update(updateDict)
-        if rrID is None:
-            self.add(baseRecord)
-            return
-        baseRecord['id'] = rrID
-        log.debug('updateRecord {}'.format(baseRecord))
-        infoRecord(baseRecord, 'update')
-        self.__rv = self.__conn.nameserver.updateRecord(baseRecord)
-        log.debug(self.__rv)
+    def upd(self, updateDict):
+        if updateDict is not list:
+            updateDict = [updateDict]
+        return [self.handler.update(e) for e in updateDict if 'id' in e]
+
+
+    # updates or adds records
+    # id     in recordDict -> update
+    # id not in recordDict -> add
+    def updOrAdd(self, recordDict):
+        self.__rv = upd(recordDict)
+        self.__rv.extend(add(recordDict))
         return self.__rv
+
+    def updOrAddDictList(self, baseRecord, updateDictWithId):
+        recordDictList = defaultDictList(baseRecord, updateDictWithId)
+        return self.updOrAdd(recordDictList)
 
     def update(self, baseRecord, updateDict):
         matchRv = self.qry(baseRecord)
@@ -214,7 +182,8 @@ class DNSUpdate:
             del baseRecord['domain']
             log.debug('updateRecord {}'.format(baseRecord))
             infoRecord(baseRecord, 'update')
-            self.__rv = self.__conn.nameserver.updateRecord(baseRecord)
+            #self.handler.__INWXwrapper_conn.update(baseRecord)
+            self.__rv = self.handler.update(baseRecord)
             log.debug(self.__rv)
         else:
             self.__rv = self.add(baseRecord)
@@ -249,11 +218,6 @@ class DNSUpdate:
     def setDictList(self, baseRecord, dictListDelete = [{}], dictListAdd = [], wild = False):
         self.addDictList(baseRecord, dictListAdd)
         self.delDictList(baseRecord, dictListDelete, dictListAdd, wild)
-
-    # this may be not usefull, because of update id association on multiple matches:
-    #def updDictList(self, baseRecord, dictListDelete = [{}], dictListUpd = [], wild = False):
-    #    pass
-
 
     def setList(self, baseRecord, contentList, deleteWild = False):
         self.addList(baseRecord, contentList)
