@@ -197,11 +197,9 @@ class DNSUpTools(DNSUpdate):
 
     def qrySOA(self, name):
         soaAPI = self.qry({'name': name, 'type': 'SOA'})['resData']['record'][0]
-        #rrID = soa['id']
         soaList = soaAPI['content'].split(' ')
         soaNS = qryDNS(soaList[0], name, 'SOA')[0] # extended query for last 4 values - WARNING internal nameserver update takes time, consecutive updates may result in inconsistencies
         return soaQRYs2dict(soaNS, soaAPI)
-        #return {'primns': soa.mname.to_text(), 'hostmaster': decDNSemail(soa.rname.to_text()), 'serial': soa.serial, 'refresh': soa.refresh, 'retry': soa.retry, 'expire': soa.expire, 'ncttl': soa.minimum, 'id': rrID}
 
     def setSOAentry(self, name, updSOAdict):
         soa = self.qrySOA(name)
@@ -271,9 +269,6 @@ class DNSUpTools(DNSUpdate):
     def setNS(self, name, ns):
         self.addNS(name, ns)
         self.delNS(anme, '*', ns)
-
-    #def addTLSA(self, name, tlsa, port = '*', proto = 'tcp'):
-    #    self.addList({'name': tlsaName(name, port, proto), 'type': 'TLSA'}, tlsa)
 
     def addTLSA(self, name, tlsaDictList):
         if type(tlsaDictList) is not list:
@@ -407,9 +402,7 @@ class DNSUpTools(DNSUpdate):
 
     def delCAA(self, name, caaDelete = [{}], caaPreserve = []):
         deleteRv = self.qryCAA(name, caaDelete)
-        log.debug(deleteRv)
         preserveRv = self.qryCAA(name, caaPreserve)
-        log.debug(preserveRv)
         return self.deleteRv(deleteRv, preserveRv)
 
     def addSRV(self, name, srvDict):
@@ -425,6 +418,7 @@ class DNSUpTools(DNSUpdate):
         log.debug(name)
         log.debug(rrDict)
         qryName = ''
+        # workarround for {type: 'CAA'} query bug of inwx client
         #rr = {'type': rrType, 'name': name}
         rr = {'name': name}
         log.debug(rr)
@@ -433,6 +427,7 @@ class DNSUpTools(DNSUpdate):
             rrDict = [rrDict]
         resultList = []
         for entry in rrDict:
+
             result = []
             for rr in rrRv['resData']['record']:
                 # workarround for {type: 'CAA'} query bug of inwx client
@@ -444,6 +439,7 @@ class DNSUpTools(DNSUpdate):
                 if not isSubDict(entry, rr):
                     continue
                 result.append(rr)
+
             resultList.append(result)
         log.debug(resultList)
         return resultList
@@ -452,12 +448,8 @@ class DNSUpTools(DNSUpdate):
         return self.qryRR(name, 'SRV', parseSRVentry, srvDict)
 
     def delSRV(self, name, srvDelete, srvPreserve = []):
-        log.debug(srvDelete)
         deleteRv = self.qrySRV(name, srvDelete)
-        log.debug(deleteRv)
-        log.debug(srvPreserve)
         preserveRv = self.qrySRV(name, srvPreserve)
-        log.debug(preserveRv)
         return self.deleteRv(deleteRv, preserveRv)
 
     def setSRV(self, name, srvDict):

@@ -87,8 +87,7 @@ class INWXwrapper:
 
     def autologin(self, recordDict):
         recordDict = dict(recordDict)
-        if 'name' in recordDict:
-            createKeyDomainIfNotExists(recordDict)
+        createKeyDomainIfNotExists(recordDict)
         if 'domain' in recordDict:
             self.login(recordDict['domain'])
 

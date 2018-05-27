@@ -47,7 +47,8 @@ def defaultDictList(baseDict, dictList):
         rvDictList.append(extDict)
     return rvDictList
 
-def matchUpperLabels(rv, name):
+def matchUpperLabels(rv, filterDict):
+    name = str(filterDict['name'])
     records = []
     if 'record' not in rv['resData']:
         return rv
@@ -88,12 +89,15 @@ class DNSUpdate:
         if type(filterDict) is list:
             self.__rv = [self.qryWild(e, filterFunc) for e in filterDict]
             return self.__rv
-        name = str(filterDict['name'])
-        createKeyDomainIfNotExists(filterDict)
+        #name = str(filterDict['name'])
+        filterDictWithName = dict(filterDict)
+        createKeyDomainIfNotExists(filterDict) 
+        # -> because at least one key needed
         if 'name' in filterDict.keys():
             del filterDict['name']
         self.__rv = self.qry(filterDict)
-        return filterFunc(self.__rv, name)
+        #return filterFunc(self.__rv, name)
+        return filterFunc(self.__rv, filterDictWithName)
 
     def add(self, updateDict):
         if type(updateDict) is list:
@@ -190,14 +194,7 @@ class DNSUpdate:
     def delList(self, baseRecord, contentDelete = '*', contentPreserve = [], wild = False):
         if type(contentDelete) is str:
             contentDelete = [contentDelete]
-        if '*' in contentDelete:
-            delList = baseRecord
-        else:
-            delList = defaultDictList(baseRecord, [{'content': e} for e in contentDelete])
-        presList = defaultDictList(baseRecord, [{'content': e} for e in contentPreserve])
-        log.debug(delList)
-        log.debug(presList)
-        self.delete(delList, presList, wild)
+        self.delDictList(baseRecord, [{}] if '*' in contentDelete else [{'content': e} for e in contentDelete], [{'content': e} for e in contentPreserve], wild)
 
     def delDictList(self, baseRecord, dictListDelete = [{}], dictListPreserve = [], wild = False):
         delList = defaultDictList(baseRecord, dictListDelete)
