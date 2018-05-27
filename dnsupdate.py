@@ -146,9 +146,9 @@ class DNSUpdate:
         return self.handler.delete({'id': rrID})
 
     def upd(self, updateDict):
-        if updateDict is not list:
+        if type(updateDict) is not list:
             updateDict = [updateDict]
-        return [self.handler.update(e) for e in updateDict if 'id' in e]
+        return [(self.handler.update(e), infoRecord(e, 'update'))[0] for e in updateDict if 'id' in e]
 
 
     # updates or adds records

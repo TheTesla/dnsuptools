@@ -179,6 +179,15 @@ def makeIP6(aaaa):
     return aaaa
 
 
+def soaUpdate(curSOAdict, updSOAdict):
+    soa = dict(curSOAdict)
+    soa.update(updSOAdict)
+    soa['serial'] += 1
+    soa['hostmaster'] = encDNSemail(soa['hostmaster'])
+    soaTXT = '{soa[primns]} {soa[hostmaster]} {soa[serial]} {soa[refresh]} {soa[retry]} {soa[expire]} {soa[ncttl]}'.format(soa = soa)
+    return {'content': soaTXT, 'id': soa['id']}
+
+
 class DNSUpTools(DNSUpdate):
     def __init__(self):
         DNSUpdate.__init__(self)
@@ -192,12 +201,8 @@ class DNSUpTools(DNSUpdate):
 
     def setSOAentry(self, name, updSOAdict):
         soa = self.qrySOA(name)
-        print(soa)
-        soa.update(updSOAdict)
-        soa['serial'] += 1
-        soa['hostmaster'] = encDNSemail(soa['hostmaster'])
-        soaTXT = '{soa[primns]} {soa[hostmaster]} {soa[serial]} {soa[refresh]} {soa[retry]} {soa[expire]} {soa[ncttl]}'.format(soa = soa)
-        self.updOrAddDictList({'name': name, 'type': 'SOA'}, {'content': soaTXT, 'id': soa['id']})
+        soaRR = soaUpdate(soa, updSOAdict)
+        self.updOrAddDictList({'name': name, 'type': 'SOA'}, soaRR)
 
     def addA(self, name, a = 'auto'):
         a = makeIP4(a)
