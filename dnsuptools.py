@@ -187,17 +187,21 @@ def soaUpdate(curSOAdict, updSOAdict):
     soaTXT = '{soa[primns]} {soa[hostmaster]} {soa[serial]} {soa[refresh]} {soa[retry]} {soa[expire]} {soa[ncttl]}'.format(soa = soa)
     return {'content': soaTXT, 'id': soa['id']}
 
+def soaQRYs2dict(soaNSqry, soaAPIqry):
+    soa = soaNSqry
+    return {'primns': soa.mname.to_text(), 'hostmaster': decDNSemail(soa.rname.to_text()), 'serial': soa.serial, 'refresh': soa.refresh, 'retry': soa.retry, 'expire': soa.expire, 'ncttl': soa.minimum, 'id': soaAPIqry['id']}
 
 class DNSUpTools(DNSUpdate):
     def __init__(self):
         DNSUpdate.__init__(self)
 
     def qrySOA(self, name):
-        soa = self.qry({'name': name, 'type': 'SOA'})['resData']['record'][0]
-        rrID = soa['id']
-        soaList = soa['content'].split(' ')
-        soa = qryDNS(soaList[0], name, 'SOA')[0] # extended query for last 4 values - WARNING internal nameserver update takes time, consecutive updates may result in inconsistencies
-        return {'primns': soa.mname.to_text(), 'hostmaster': decDNSemail(soa.rname.to_text()), 'serial': soa.serial, 'refresh': soa.refresh, 'retry': soa.retry, 'expire': soa.expire, 'ncttl': soa.minimum, 'id': rrID}
+        soaAPI = self.qry({'name': name, 'type': 'SOA'})['resData']['record'][0]
+        #rrID = soa['id']
+        soaList = soaAPI['content'].split(' ')
+        soaNS = qryDNS(soaList[0], name, 'SOA')[0] # extended query for last 4 values - WARNING internal nameserver update takes time, consecutive updates may result in inconsistencies
+        return soaQRYs2dict(soaNS, soaAPI)
+        #return {'primns': soa.mname.to_text(), 'hostmaster': decDNSemail(soa.rname.to_text()), 'serial': soa.serial, 'refresh': soa.refresh, 'retry': soa.retry, 'expire': soa.expire, 'ncttl': soa.minimum, 'id': rrID}
 
     def setSOAentry(self, name, updSOAdict):
         soa = self.qrySOA(name)

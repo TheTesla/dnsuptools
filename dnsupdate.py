@@ -219,6 +219,9 @@ def infoRecord(recordDict, operation = 'add'):
     if 1 < len(v):
         v = v[1].split(';')[0].split(' ')[0].split('1')[0]
         rrType = v.upper()
+    if 5 < len(recordDict['name']):
+        if '_adsp.' == recordDict['name'][:6]:
+            rrType = 'ADSP'
     if 'content' in recordDict:
         log.info('{} {} for {} : {}'.format(operation, rrType, recordDict['name'], recordDict['content']))
     else:
