@@ -435,35 +435,11 @@ class DNSUpTools(DNSUpdate):
             self.addList({'name': '_{x[service]}._{x[proto]}.{name}'.format(x=srv, name=str(name)), 'type': 'SRV', 'prio': srv['prio']}, '{x[weight]} {x[port]} {x[server]}'.format(x=srv))
 
     def qryRR(self, name, rrType, parser, rrDict = {}):
-        log.debug(name)
-        log.debug(rrDict)
-        qryName = ''
         # workarround for {type: 'CAA'} query bug of inwx client
-        #rr = {'type': rrType, 'name': name}
-        rr = {'name': name}
-        log.debug(rr)
-        rrRv = self.qryWild(rr)
+        rrRv = self.qryWild({'name': name})
         if type(rrDict) is dict:
             rrDict = [rrDict]
-        resultList = []
-        for entry in rrDict:
-
-            result = recordFilter(entry, rrRv['resData']['record'], parser, name, rrType)
-            #result = []
-            #for rr in rrRv['resData']['record']:
-            #    # workarround for {type: 'CAA'} query bug of inwx client
-            #    if not isSubDict({'type': rrType, 'name': name}, rr):
-            #        continue
-            #    rr.update(parser(rr))
-            #    log.debug(entry)
-            #    log.debug(rr)
-            #    if not isSubDict(entry, rr):
-            #        continue
-            #    result.append(rr)
-
-            resultList.append(result)
-        log.debug(resultList)
-        return resultList
+        return [recordFilter(e, rrRv['resData']['record'], parser, name, rrType) for e in rrDict]
 
     def qrySRV(self, name, srvDict = {}):
         return self.qryRR(name, 'SRV', parseSRVentry, srvDict)
