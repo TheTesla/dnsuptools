@@ -191,6 +191,26 @@ def soaQRYs2dict(soaNSqry, soaAPIqry):
     soa = soaNSqry
     return {'primns': soa.mname.to_text(), 'hostmaster': decDNSemail(soa.rname.to_text()), 'serial': soa.serial, 'refresh': soa.refresh, 'retry': soa.retry, 'expire': soa.expire, 'ncttl': soa.minimum, 'id': soaAPIqry['id']}
 
+
+def recordFilter(entry, records, parser=None, name=None, rrType=None):
+    result = []
+    preFilter = {}
+    if name is not None:
+        preFilter['name'] = name
+    if rrType is not None:
+        preFilter['type'] = rrType
+    for rr in records:
+        # workarround for {type: 'CAA'} query bug of inwx client
+        if not isSubDict(preFilter, rr):
+            continue
+        if parser is not None:
+            rr.update(parser(rr))
+        if not isSubDict(entry, rr):
+            continue
+        result.append(rr)
+    return result
+    
+
 class DNSUpTools(DNSUpdate):
     def __init__(self):
         DNSUpdate.__init__(self)
@@ -428,17 +448,18 @@ class DNSUpTools(DNSUpdate):
         resultList = []
         for entry in rrDict:
 
-            result = []
-            for rr in rrRv['resData']['record']:
-                # workarround for {type: 'CAA'} query bug of inwx client
-                if not isSubDict({'type': rrType, 'name': name}, rr):
-                    continue
-                rr.update(parser(rr))
-                log.debug(entry)
-                log.debug(rr)
-                if not isSubDict(entry, rr):
-                    continue
-                result.append(rr)
+            result = recordFilter(entry, rrRv['resData']['record'], parser, name, rrType)
+            #result = []
+            #for rr in rrRv['resData']['record']:
+            #    # workarround for {type: 'CAA'} query bug of inwx client
+            #    if not isSubDict({'type': rrType, 'name': name}, rr):
+            #        continue
+            #    rr.update(parser(rr))
+            #    log.debug(entry)
+            #    log.debug(rr)
+            #    if not isSubDict(entry, rr):
+            #        continue
+            #    result.append(rr)
 
             resultList.append(result)
         log.debug(resultList)
