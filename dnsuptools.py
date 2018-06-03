@@ -25,6 +25,13 @@ def parseSRVentry(record):
     srv = {'service': keyList[0][1:], 'proto': keyList[1][1:], 'weight': valList[0], 'port': valList[1], 'server': valList[2], 'prio': record['prio']}
     return srv
 
+def formatSRVentry(name, srvDict):
+    if type(srvDict) is list:
+        return [formatSRVentry(name, e) for e in srvDict]
+    srv = srvDict
+    return {'name': '_{x[service]}._{x[proto]}.{name}'.format(x=srv, name=str(name)), 'type': 'SRV', 'prio': srv['prio'], 'content': '{x[weight]} {x[port]} {x[server]}'.format(x=srv)}
+
+
 def isSubDict(subDict, contentDict):
     for k, v in subDict.items():
         if k not in contentDict:
@@ -40,7 +47,7 @@ def parseSPFentries(entryList):
         if e[0] in '+-~?':
             entryDict[e[1:]] = e[0]
         else:
-            entryDict[e] = ''
+            entryDict[e] = '+'
     return entryDict
     
 def formatSPFentries(entryDict):
@@ -344,12 +351,9 @@ class DNSUpTools(DNSUpdate):
             return []
         return [rr for rr in rv['resData']['record'] if 'v=spf1' in rr['content'].split(' ')]
 
-
-    def delSPF(self, name, spfDelete = '*', v = 'spf1', spfPreserve = []):
-        if '*' == str(spfDelete):
-            self.delTXT(str(name))
-        else:
-            self.delTXT(str(name), 'v=%s %s' % (v, spfDelete), spfPreserve)
+    def delSPF(self, name):
+        spf = qrySPF(name)
+        self.setSPF(name, [], spf['id'])
 
     # only one SPF record allowed
     def setSPF(self, name, spf, rrID = None, v = 'spf1'):
@@ -408,6 +412,9 @@ class DNSUpTools(DNSUpdate):
 
     # only one ADSP record allowed
     def setADSP(self, name, adsp):
+        if '' == adsp:
+            self.delADSP(name)
+            return
         self.update({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, {'content': 'dkim=' + str(adsp)})
 
     def addCAA(self, name, caaDict):
@@ -427,12 +434,16 @@ class DNSUpTools(DNSUpdate):
 
     def addSRV(self, name, srvDict):
         log.debug(srvDict)
-        if type(srvDict) is dict:
-            srvDict = [srvDict]
-        for e in srvDict:
-            srv = {'prio': 10, 'weight' : 0}
-            srv.update(e)
-            self.addList({'name': '_{x[service]}._{x[proto]}.{name}'.format(x=srv, name=str(name)), 'type': 'SRV', 'prio': srv['prio']}, '{x[weight]} {x[port]} {x[server]}'.format(x=srv))
+        #if type(srvDict) is dict:
+        #    srvDict = [srvDict]
+        srvDictList = defaultDictList({'prio': 10, 'weight' : 0}, srvDict)
+        srvRRdictList = formatSRVentry(name, srvDictList)
+        self.addDictList({}, srvRRdictList)
+        #for e in srvDict:
+        #    srv = {'prio': 10, 'weight' : 0}
+        #    srv.update(e)
+        #    self.add(formatSRVentry(srv))
+            #self.addList({'name': '_{x[service]}._{x[proto]}.{name}'.format(x=srv, name=str(name)), 'type': 'SRV', 'prio': srv['prio']}, '{x[weight]} {x[port]} {x[server]}'.format(x=srv))
 
     def qryRR(self, name, rrType, parser, rrDict = {}):
         # workarround for {type: 'CAA'} query bug of inwx client
