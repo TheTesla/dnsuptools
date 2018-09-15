@@ -417,6 +417,16 @@ class DNSUpTools(DNSUpdate):
             return
         self.update({'name': '_adsp._domainkey.' + str(name), 'type': 'TXT'}, {'content': 'dkim=' + str(adsp)})
 
+    def setACME(self, name, challenge=''):
+        if '' == challenge:
+            self.delACME(name)
+            return
+        self.update({'name': '_acme-challenge.' + str(name), 'type': 'TXT'}, {'content': str(challenge)})
+
+    def delACME(self, name):
+        self.delTXT('_acme-challenge.' + str(name), '*')
+
+
     def addCAA(self, name, caaDict):
         self.addList({'name': str(name), 'type': 'CAA'}, genCAA(caaDict))
 
