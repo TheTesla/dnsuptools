@@ -13,7 +13,7 @@ inwxPasswdDict = {'default': 'passwd'}
 try:
     from .passwords import *
 except:
-    log.info('no passwords.py file for dnsuptools default login')
+    log.debug('no passwords.py file for dnsuptools default login')
 
 def extractIds(rv):
     if type(rv) is list:
@@ -219,6 +219,9 @@ def infoRecord(recordDict, operation = 'add'):
     if 5 < len(recordDict['name']):
         if '_adsp.' == recordDict['name'][:6]:
             rrType = 'ADSP'
+    if 15 < len(recordDict['name']):
+        if '_acme-challenge.' == recordDict['name'][:16]:
+            rrType = 'ACME'
     if 'content' in recordDict:
         log.info('{} {} for {} : {}'.format(operation, rrType, recordDict['name'], recordDict['content']))
     else:

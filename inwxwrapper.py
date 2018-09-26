@@ -2,7 +2,7 @@
 # -*- encoding: UTF8 -*-
 
 from .inwxclient.inwx import domrobot 
-from .simplelogger import simplelogger as log 
+from simpleloggerplus import simpleloggerplus as log
 from .dnshelpers import createKeyDomainIfNotExists
 
 inwxUserDict = {'default': 'user'}
@@ -71,7 +71,9 @@ class INWXwrapper:
                 return
         self.connect()
         loggedInCredentials = {'lang': 'en', 'user': self.getUser(domain), 'pass': self.getPasswd(domain)} 
+        log.debug(loggedInCredentials)
         self.__rv = self.__conn.account.login(loggedInCredentials)
+        log.debug(self.__rv)
         if 1000 != self.__rv['code']:
             return
         self.__loggedInCredentials = dict(loggedInCredentials)

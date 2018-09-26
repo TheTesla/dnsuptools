@@ -301,6 +301,7 @@ class DNSUpTools(DNSUpdate):
         if type(tlsaDictList) is not list:
             tlsaDictList = [tlsaDictList]
         for e in tlsaDictList:
+            e['tlsa'] = e['tlsa'].replace('\n', '')
             self.addList({'name': tlsaName(name, e['port'], e['proto']), 'type': 'TLSA'}, e['tlsa'])
 
     def delTLSA(self, name, tlsaDelete = '*', tlsaPreserve = [], port = '', proto = ''):
