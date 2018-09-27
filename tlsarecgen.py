@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: UTF8 -*-
 
-from subprocess import *
+from subprocess import check_output, Popen, PIPE
 from .simplelogger import simplelogger as log
 
 def tlsaFromCertFile(certFilename, certConstr = 3, keyOnly = 0, hashType = 1):
@@ -21,7 +21,6 @@ def tlsaFromCertFile(certFilename, certConstr = 3, keyOnly = 0, hashType = 1):
     elif 2 == hashType:
         output = check_output(('openssl', 'sha512'), stdin=ps.stdout)
     log.debug(output)
-    #ps.wait()
     return output.split(' ')[1]
 
 def tlsaRecordsFromCertFile(certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]): 
@@ -30,30 +29,7 @@ def tlsaRecordsFromCertFile(certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1
         for e in certFilenames:
             tlsaList.extend(tlsaRecordsFromCertFile(e, tlsaTypes))
         return tlsaList
-    for tlsaType in tlsaTypes:
-        tlsaList.append('%s %s %s %s' % (tlsaType[0], tlsaType[1], tlsaType[2], tlsaFromCertFile(certFilenames, tlsaType[0], tlsaType[1], tlsaType[2])))
-    return tlsaList
+    tlsaDictList = [{'usage': tlsaType[0], 'selector': tlsaType[1], 'matchingtype': tlsaType[2], 'tlsa': tlsaFromCertFile(certFilenames, tlsaType[0], tlsaType[1], tlsaType[2])} for tlsaType in tlsaTypes]
+    return tlsaDictList
 
-def tlsaName(name, port = '*', proto = 'tcp'):
-    rv = ''
-    if port is None:
-        pass
-    elif '' == str(port):
-        pass
-    elif '*' == str(port): 
-        rv += '*.'
-    else:
-        if '_' == str(port)[0]:
-            port = port[1:]
-        rv += '_' + str(port) + '.'
-    if proto is None:
-        pass
-    elif '' == str(proto):
-        pass
-    else:
-        if '_' == str(proto)[0]:
-            proto = proto[1:]
-        rv += '_' + str(proto) + '.'
-    rv += str(name)
-    return rv
 

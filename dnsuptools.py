@@ -17,6 +17,29 @@ except ImportError:
 import socket
 import dns.resolver
 
+def parseTLSAentry(record):
+    key = record['name']
+    keyList = key.split('.')
+    val = record['content']
+    valList = val.split(' ')
+    tlsa = {'port': keyList[0], 'proto': keyList[1], 'usage': valList[0], 'selector': valList[1], 'matchingtype': valList[2], 'tlsa': valList[3]}
+    if '_' == tlsa['port'][0]:
+        tlsa['port'] = tlsa['port'][1:]
+    if '_' == tlsa['proto'][0]:
+        tlsa['proto'] = tlsa['proto'][1:]
+    tlsa['tlsa'] = tlsa['tlsa'].replace('\n','')
+    return tlsa
+
+def formatTLSAentry(name, tlsaDict):
+    if type(tlsaDict) is list:
+        return [formatTLSAentry(name, e) for e in tlsaDict]
+    tlsa = tlsaDict
+    if '*' != tlsa['port']:
+        tlsa['port'] = '_{}'.format(tlsa['port'])
+    tlsa['tlsa'] = tlsa['tlsa'].replace('\n','')
+    return {'name': '{x[port]}._{x[proto]}.{name}'.format(x=tlsa, name=str(name)), 'type': 'TLSA', 'content': '{x[usage]} {x[selector]} {x[matchingtype]} {x[tlsa]}'.format(x=tlsa)}
+
+
 def parseSRVentry(record):
     key = record['name']
     keyList = key.split('.')
@@ -297,27 +320,28 @@ class DNSUpTools(DNSUpdate):
         self.addNS(name, ns)
         self.delNS(anme, '*', ns)
 
-    def addTLSA(self, name, tlsaDictList):
-        if type(tlsaDictList) is not list:
-            tlsaDictList = [tlsaDictList]
-        for e in tlsaDictList:
-            e['tlsa'] = e['tlsa'].replace('\n', '')
-            self.addList({'name': tlsaName(name, e['port'], e['proto']), 'type': 'TLSA'}, e['tlsa'])
+    def addTLSA(self, name, tlsaDict):
+        tlsaDictList = defaultDictList({'port': '*', 'proto' : 'tcp'}, tlsaDict)
+        tlsaRRdictList = formatTLSAentry(name, tlsaDictList)
+        self.addDictList({}, tlsaRRdictList)
 
-    def delTLSA(self, name, tlsaDelete = '*', tlsaPreserve = [], port = '', proto = ''):
-        self.delList({'name': tlsaName(name, port, proto), 'type': 'TLSA'}, tlsaDelete, tlsaPreserve)
+    def delTLSA(self, name, tlsaDelete, tlsaPreserve = []):
+        deleteRv = self.qryTLSA(name, tlsaDelete)
+        preserveRv = self.qryTLSA(name, tlsaPreserve)
+        return self.deleteRv(deleteRv, preserveRv)
 
-    def setTLSA(self, name, tlsa, port = '*', proto = 'tcp'):
-        self.setList({'name': tlsaName(name, port, proto), 'type': 'TLSA'}, tlsa, True)
+    def setTLSA(self, name, tlsaDict):
+        self.addTLSA(name, tlsaDict)
+        self.delTLSA(name, {}, tlsaDict)
 
     def addTLSAfromCert(self, name, certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]):
         if 'auto' == str(tlsaTypes):
             tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]
         log.debug('name = %s' % name)
         log.debug('certFilenames = %s' % certFilenames)
-        self.addTLSA(name, [{'tlsa': e, 'port': '*', 'proto': 'tcp'} for e in tlsaRecordsFromCertFile(certFilenames, tlsaTypes)])
+        self.addTLSA(name, tlsaRecordsFromCertFile(certFilenames, tlsaTypes))
 
-    def delTLSApreserveFromCert(self, name, tlsaDelete = '*', certFilenamesPreserve = []):
+    def delTLSApreserveFromCert(self, name, tlsaDelete = {}, certFilenamesPreserve = []):
         self.delTLSA(name, tlsaDelete, tlsaRecordsFromCertFile(certFilenamesPreserve))
 
     def setTLSAfromCert(self, name, certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]): 
@@ -436,6 +460,10 @@ class DNSUpTools(DNSUpdate):
         self.delCAA(name, [{}], caaDict)
 
     def qryCAA(self, name, caaDict = {}):
+        if type(caaDict) is dict:
+            caaDict = [caaDict]
+        for e in caaDict:
+            e['name'] = str(name)
         return self.qryRR(str(name), 'CAA', parseCAA, caaDict)
 
     def delCAA(self, name, caaDelete = [{}], caaPreserve = []):
@@ -445,23 +473,23 @@ class DNSUpTools(DNSUpdate):
 
     def addSRV(self, name, srvDict):
         log.debug(srvDict)
-        #if type(srvDict) is dict:
-        #    srvDict = [srvDict]
         srvDictList = defaultDictList({'prio': 10, 'weight' : 0}, srvDict)
         srvRRdictList = formatSRVentry(name, srvDictList)
         self.addDictList({}, srvRRdictList)
-        #for e in srvDict:
-        #    srv = {'prio': 10, 'weight' : 0}
-        #    srv.update(e)
-        #    self.add(formatSRVentry(srv))
-            #self.addList({'name': '_{x[service]}._{x[proto]}.{name}'.format(x=srv, name=str(name)), 'type': 'SRV', 'prio': srv['prio']}, '{x[weight]} {x[port]} {x[server]}'.format(x=srv))
 
     def qryRR(self, name, rrType, parser, rrDict = {}):
-        # workarround for {type: 'CAA'} query bug of inwx client
         rrRv = self.qryWild({'name': name})
         if type(rrDict) is dict:
             rrDict = [rrDict]
-        return [recordFilter(e, rrRv['resData']['record'], parser, name, rrType) for e in rrDict]
+        return [recordFilter(e, rrRv['resData']['record'], parser, None, rrType) for e in rrDict]
+
+    def qryTLSA(self, name, tlsaDict = {}):
+        if type(tlsaDict) is dict:
+            tlsaDict = [tlsaDict]
+        for e in tlsaDict:
+            if 'tlsa' in e:
+                e['tlsa'] = e['tlsa'].replace('\n','')
+        return self.qryRR(name, 'TLSA', parseTLSAentry, tlsaDict)
 
     def qrySRV(self, name, srvDict = {}):
         return self.qryRR(name, 'SRV', parseSRVentry, srvDict)
