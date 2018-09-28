@@ -18,11 +18,11 @@ except:
 def extractIds(rv):
     if type(rv) is list:
         return [extractIds(e) for e in rv]
-    if 'resData' in rv:
-        if 'record' in rv['resData']:
-            return [extractIds(e) for e in rv['resData']['record']]
-        else:
-            return []
+#    if 'resData' in rv:
+#        if 'record' in rv['resData']:
+#            return [extractIds(e) for e in rv['resData']['record']]
+#        else:
+#            return []
     log.debug(rv)
     return rv['id']
 
@@ -50,14 +50,16 @@ def defaultDictList(baseDict, dictList):
 def matchUpperLabels(rv, filterDict):
     name = str(filterDict['name'])
     records = []
-    if 'record' not in rv['resData']:
-        return rv
-    for i, record in enumerate(rv['resData']['record']):
+#    if 'record' not in rv['resData']:
+#        return rv
+    #for i, record in enumerate(rv['resData']['record']):
+    for i, record in enumerate(rv):
         if name.count('.') > record['name'].count('.'):
             continue
         elif record['name'].split('.', record['name'].count('.') - name.count('.'))[-1] == name:
             records.append(record)
-    rv['resData']['record'] = records
+    #rv['resData']['record'] = records
+    rv = records
     return rv
 
 
@@ -89,14 +91,12 @@ class DNSUpdate:
         if type(filterDict) is list:
             self.__rv = [self.qryWild(e, filterFunc) for e in filterDict]
             return self.__rv
-        #name = str(filterDict['name'])
         filterDictWithName = dict(filterDict)
         createKeyDomainIfNotExists(filterDict) 
         # -> because at least one key needed
         if 'name' in filterDict.keys():
             del filterDict['name']
         self.__rv = self.qry(filterDict)
-        #return filterFunc(self.__rv, name)
         return filterFunc(self.__rv, filterDictWithName)
 
     def add(self, updateDict):
@@ -141,7 +141,8 @@ class DNSUpdate:
         log.debug('deleteRecords {}'.format(deleteOnlyIds))
         for e in deleteOnlyIds:
             rr = self.qry({'recordId': e})
-            infoRecord(rr['resData']['record'][0], 'delete')
+            #infoRecord(rr['resData']['record'][0], 'delete')
+            infoRecord(rr[0], 'delete')
         self.__rv = [self.delById(e) for e in deleteOnlyIds]
         log.debug(self.__rv)
         return self.__rv

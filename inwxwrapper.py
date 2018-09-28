@@ -98,7 +98,12 @@ class INWXwrapper:
     # Yes, login also for info needed!
     def info(self, infoDict):
         self.autologin(infoDict)
-        return self.__conn.nameserver.info(infoDict)
+        #return self.__conn.nameserver.info(infoDict)
+        rv = self.__conn.nameserver.info(infoDict)
+        rv = rv['resData']
+        if 'record' in rv:
+            return rv['record']
+        return []
 
     def create(self, createDict):
         createKeyDomainIfNotExists(createDict)

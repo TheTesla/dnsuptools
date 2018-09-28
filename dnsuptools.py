@@ -17,6 +17,24 @@ except ImportError:
 import socket
 import dns.resolver
 
+def parseDKIMentry(record):
+    key = record['name']
+    keyList = key.split('.')
+    val = record['content'].replace(' ', '')
+    valList = val.split(';')
+    valDict = {e.split('=')[0]: e.split('=')[1] for e in valList if '=' in e}
+    dkim = {'keyname': keyList[0], 'dkimlabel': keyList[1]}
+    dkim.update(valDict)
+    return dkim
+
+def formatDKIMentry(name, dkimDict):
+    if type(dkimDict) is list:
+        return [formatTLSAentry(name, e) for e in dkimDict]
+    dkim = {'keyname': 'key1', 'v': 'DKIM1', 'k': 'rsa'}
+    dkim.update(dkimDict)
+    return {'name': '{x[keyname]}._domainkey.{name}'.format(x=tlsa, name=str(name)), 'type': 'TXT', 'content': 'v={x[v]}; k={x[k]}; p={x[p]}'.format(x=dkim)}
+
+
 def parseTLSAentry(record):
     key = record['name']
     keyList = key.split('.')
@@ -246,7 +264,8 @@ class DNSUpTools(DNSUpdate):
         DNSUpdate.__init__(self)
 
     def qrySOA(self, name):
-        soaAPI = self.qry({'name': name, 'type': 'SOA'})['resData']['record'][0]
+        #soaAPI = self.qry({'name': name, 'type': 'SOA'})['resData']['record'][0]
+        soaAPI = self.qry({'name': name, 'type': 'SOA'})[0]
         soaList = soaAPI['content'].split(' ')
         soaNS = qryDNS(soaList[0], name, 'SOA')[0] # extended query for last 4 values - WARNING internal nameserver update takes time, consecutive updates may result in inconsistencies
         return soaQRYs2dict(soaNS, soaAPI)
@@ -372,9 +391,10 @@ class DNSUpTools(DNSUpdate):
 
     def qrySPF(self, name):
         rv = self.qry({'name': str(name), 'type': 'TXT'})
-        if 'record' not in rv['resData']:
-            return []
-        return [rr for rr in rv['resData']['record'] if 'v=spf1' in rr['content'].split(' ')]
+        #if 'record' not in rv['resData']:
+        #    return []
+        #return [rr for rr in rv['resData']['record'] if 'v=spf1' in rr['content'].split(' ')]
+        return [rr for rr in rv if 'v=spf1' in rr['content'].split(' ')]
 
     def delSPF(self, name):
         spf = qrySPF(name)
@@ -411,9 +431,10 @@ class DNSUpTools(DNSUpdate):
 
     def qryDMARC(self, name):
         dmarcRv = self.qry({'name': '_dmarc.'+str(name), 'type': 'TXT'})
-        dmarcQ = []
-        if 'record' in dmarcRv['resData']:
-            dmarcQ = [parseDMARC(rr['content']) for rr in dmarcRv['resData']['record']]
+        #dmarcQ = []
+        #if 'record' in dmarcRv['resData']:
+        #    dmarcQ = [parseDMARC(rr['content']) for rr in dmarcRv['resData']['record']]
+        dmarcQ = [parseDMARC(rr['content']) for rr in dmarcRv]
         return dmarcQ
 
     def setDMARCentry(self, name, dmarcDict):
@@ -481,7 +502,8 @@ class DNSUpTools(DNSUpdate):
         rrRv = self.qryWild({'name': name})
         if type(rrDict) is dict:
             rrDict = [rrDict]
-        return [recordFilter(e, rrRv['resData']['record'], parser, None, rrType) for e in rrDict]
+        #return [recordFilter(e, rrRv['resData']['record'], parser, None, rrType) for e in rrDict]
+        return [recordFilter(e, rrRv, parser, None, rrType) for e in rrDict]
 
     def qryTLSA(self, name, tlsaDict = {}):
         if type(tlsaDict) is dict:
