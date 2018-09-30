@@ -15,6 +15,8 @@ except ImportError:
 import socket
 import dns.resolver
 
+
+
 def parseDKIMentry(record):
     key = record['name']
     keyList = key.split('.')
@@ -23,14 +25,18 @@ def parseDKIMentry(record):
     valDict = {e.split('=')[0]: e.split('=')[1] for e in valList if '=' in e}
     dkim = {'keyname': keyList[0], 'dkimlabel': keyList[1]}
     dkim.update(valDict)
+    keyL = dkim['keyname'].split('_')
+    dkim['keybase'] = keyL[0]
+    if 1 < len(keyL):
+        dkim['keynbr'] = keyL[1]
     return dkim
 
 def formatDKIMentry(name, dkimDict):
     if type(dkimDict) is list:
-        return [formatTLSAentry(name, e) for e in dkimDict]
+        return [formatDKIMentry(name, e) for e in dkimDict]
     dkim = {'keyname': 'key1', 'v': 'DKIM1', 'k': 'rsa'}
     dkim.update(dkimDict)
-    return {'name': '{x[keyname]}._domainkey.{name}'.format(x=tlsa, name=str(name)), 'type': 'TXT', 'content': 'v={x[v]}; k={x[k]}; p={x[p]}'.format(x=dkim)}
+    return {'name': '{x[keyname]}._domainkey.{name}'.format(x=dkim, name=str(name)), 'type': 'TXT', 'content': 'v={x[v]}; k={x[k]}; p={x[p]}'.format(x=dkim)}
 
 
 def parseTLSAentry(record):
@@ -507,51 +513,43 @@ class DNSUpTools(DNSUpdate):
         self.addSRV(name, srvDict)
         self.delSRV(name, {}, srvDict)
 
-    def addDKIM(self, name, p, keyname = 'key1', v = 'DKIM1', k = 'rsa'):
-        if k is None:
-            k = 'rsa'
-        if v is None:
-            v = 'DKIM1'
-        if keyname is None:
-            keyname = 'key'
-        if p is None:
-            return
-        self.addTXT(str(keyname) + '._domainkey.' + str(name), 'v=%s; k=%s; p=%s' % (v, k, p)) 
+    def addDKIM(self, name, dkimDict):
+        dkimDict = dkimFromFile(dkimDict)
+        dkimRRdictList = formatDKIMentry(name, dkimDict)
+        self.addDictList({}, dkimRRdictList)
 
     def addDKIMfromFile(self, name, filenames):
-        if type(filenames) is list:
-            for f in filenames:
-                self.addDKIMfromFile(name, f)
-        else:
-            n, v, k, p = dkimFromFile(filenames)
-            self.addDKIM(name, p, n, v, k)
+        if type(filenames) is str:
+            filenames = [filenames]
+        dkimDictList = [{'filename': e} for e in filenames]
+        self.addDKIM(name, dkimDictList)
 
-    def delDKIM(self, name, keynames = '*', keynamesPreserve = []):
-        if type(keynames) is str:
-            keynames = [keynames]
-        if type(keynamesPreserve) is str:
-            keynamesPreserve = [keynamesPreserve]
-        keynamesPreserve.append('_adsp')
-        if '*' in keynamesPreserve:
-            return
-        if '*' in keynames:
-            delete = [{'name': '_domainkey.' + str(name), 'type': 'TXT'}]
-        else:
-            delete = [{'name': str(e) + '._domainkey.' + str(name), 'type': 'TXT'} for e in keynames]
-        preserve = [{'name': str(e) + '._domainkey.' + str(name)} for e in keynamesPreserve]
-        self.delete(delete, preserve, True)
+    def qryDKIM(self, name, dkimDict):
+        rv = self.qryRR('_domainkey.{}'.format(name), 'TXT', parseDKIMentry, dkimDict)
+        rv = [f for e in rv for f in e if f['keyname'] != '_adsp']
+        return rv
+
+    def delDKIM(self, name, dkimDelete = {}, dkimPreserve = []):
+        dkimFromFile(dkimDelete)
+        dkimFromFile(dkimPreserve)
+        if 'filename' in dkimDelete:
+            del dkimDelete['filename']
+        if 'filename' in dkimPreserve:
+            del dkimPreserve['filename']
+        deleteRv = self.qryDKIM(name, dkimDelete)
+        preserveRv = self.qryDKIM(name, dkimPreserve)
+        return self.deleteRv(deleteRv, preserveRv)
 
     def delDKIMpreserveFromFile(self, name, filenames):
         if type(filenames) is str:
             filenames = [filenames]
-        keynamesPreserve = []
-        for f in filenames:
-            keynamesPreserve.append(dkimFromFile(f)[0])
-        self.delDKIM(name, '*', keynamesPreserve)
+        dkimPreserveList = [{'filename': e} for e in filenames]
+        self.delDKIM(name, {}, dkimPreserveList)
 
-    def setDKIM(self, name, p, keyname = 'key1', v = 'DKIM1', k = 'rsa'):
-        self.addDKIM(name, p, keyname, v, k)
-        self.delDKIM(name, '*', keyname)
+
+    def setDKIM(self, name, dkimDict):
+        self.addDKIM(name, dkimDict)
+        self.delDKIM(name, {}, dkimDict)
 
     def setDKIMfromFile(self, name, filenames):
         self.addDKIMfromFile(name, filenames)

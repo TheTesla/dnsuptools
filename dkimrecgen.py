@@ -4,7 +4,15 @@
 from subprocess import *
 import re
 
-def dkimFromFile(dkimFilename):
+#def dkimFromFile(dkimFilename):
+def dkimFromFile(dkimDict):
+    if type(dkimDict) is list:
+        rv = [dkimFromFile(e) for e in dkimDict]
+        dkimDict[:] = rv
+        return rv
+    if 'filename' not in dkimDict:
+        return dkimDict
+    dkimFilename = dkimDict['filename']
     dkimCont = check_output(('cat', str(dkimFilename)))
     dkimCont = re.sub('[\"\n\r\t\(\)\ ]', '', dkimCont)
     n = dkimCont.split('._domainkey')[0]
@@ -23,7 +31,8 @@ def dkimFromFile(dkimFilename):
         p = p.split(';')[0]
     except:
         p = None
-    return n, v, k, p
+    dkimDict.update({'p': p, 'keyname': n, 'v': v, 'k': k})
+    return dkimDict
 
 
 
