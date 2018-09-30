@@ -12,8 +12,6 @@ try:
 except ImportError:
     from io import StringIO
 
-#import re
-
 import socket
 import dns.resolver
 
@@ -240,17 +238,9 @@ def soaQRYs2dict(soaNSqry, soaAPIqry):
     return {'primns': soa.mname.to_text(), 'hostmaster': decDNSemail(soa.rname.to_text()), 'serial': soa.serial, 'refresh': soa.refresh, 'retry': soa.retry, 'expire': soa.expire, 'ncttl': soa.minimum, 'id': soaAPIqry['id']}
 
 
-def recordFilter(entry, records, parser=None, name=None, rrType=None):
+def recordFilter(entry, records, parser=None):
     result = []
-    preFilter = {}
-    if name is not None:
-        preFilter['name'] = name
-    if rrType is not None:
-        preFilter['type'] = rrType
     for rr in records:
-        # workarround for {type: 'CAA'} query bug of inwx client
-        if not isSubDict(preFilter, rr):
-            continue
         if parser is not None:
             rr.update(parser(rr))
         if not isSubDict(entry, rr):
@@ -264,7 +254,6 @@ class DNSUpTools(DNSUpdate):
         DNSUpdate.__init__(self)
 
     def qrySOA(self, name):
-        #soaAPI = self.qry({'name': name, 'type': 'SOA'})['resData']['record'][0]
         soaAPI = self.qry({'name': name, 'type': 'SOA'})[0]
         soaList = soaAPI['content'].split(' ')
         soaNS = qryDNS(soaList[0], name, 'SOA')[0] # extended query for last 4 values - WARNING internal nameserver update takes time, consecutive updates may result in inconsistencies
@@ -391,9 +380,6 @@ class DNSUpTools(DNSUpdate):
 
     def qrySPF(self, name):
         rv = self.qry({'name': str(name), 'type': 'TXT'})
-        #if 'record' not in rv['resData']:
-        #    return []
-        #return [rr for rr in rv['resData']['record'] if 'v=spf1' in rr['content'].split(' ')]
         return [rr for rr in rv if 'v=spf1' in rr['content'].split(' ')]
 
     def delSPF(self, name):
@@ -431,9 +417,6 @@ class DNSUpTools(DNSUpdate):
 
     def qryDMARC(self, name):
         dmarcRv = self.qry({'name': '_dmarc.'+str(name), 'type': 'TXT'})
-        #dmarcQ = []
-        #if 'record' in dmarcRv['resData']:
-        #    dmarcQ = [parseDMARC(rr['content']) for rr in dmarcRv['resData']['record']]
         dmarcQ = [parseDMARC(rr['content']) for rr in dmarcRv]
         return dmarcQ
 
@@ -485,7 +468,7 @@ class DNSUpTools(DNSUpdate):
             caaDict = [caaDict]
         for e in caaDict:
             e['name'] = str(name)
-        return self.qryRR(str(name), 'CAA', parseCAA, caaDict)
+        return self.qryRR(str(name), 'CAA', parseCAA, caaDict, [])
 
     def delCAA(self, name, caaDelete = [{}], caaPreserve = []):
         deleteRv = self.qryCAA(name, caaDelete)
@@ -498,12 +481,11 @@ class DNSUpTools(DNSUpdate):
         srvRRdictList = formatSRVentry(name, srvDictList)
         self.addDictList({}, srvRRdictList)
 
-    def qryRR(self, name, rrType, parser, rrDict = {}):
-        rrRv = self.qryWild({'name': name})
+    def qryRR(self, name, rrType, parser, rrDict = {}, qryFilters=[MatchUpperLabels]):
+        rrRv = self.qryWild({'name': name, 'type': rrType}, qryFilters)
         if type(rrDict) is dict:
             rrDict = [rrDict]
-        #return [recordFilter(e, rrRv['resData']['record'], parser, None, rrType) for e in rrDict]
-        return [recordFilter(e, rrRv, parser, None, rrType) for e in rrDict]
+        return [recordFilter(e, rrRv, parser) for e in rrDict]
 
     def qryTLSA(self, name, tlsaDict = {}):
         if type(tlsaDict) is dict:

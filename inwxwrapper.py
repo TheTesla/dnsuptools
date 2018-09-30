@@ -99,11 +99,15 @@ class INWXwrapper:
     def info(self, infoDict):
         self.autologin(infoDict)
         #return self.__conn.nameserver.info(infoDict)
+        stateDict = {}
+        caaWorkaroundPre(infoDict, stateDict)
         rv = self.__conn.nameserver.info(infoDict)
         rv = rv['resData']
-        if 'record' in rv:
-            return rv['record']
-        return []
+        if 'record' not in rv:
+            return []
+        rv = rv['record']
+        caaWorkaroundPost(rv, stateDict)
+        return rv
 
     def create(self, createDict):
         createKeyDomainIfNotExists(createDict)
@@ -125,4 +129,19 @@ class INWXwrapper:
             del updateDict['domain'] 
         return self.__conn.nameserver.updateRecord(updateDict)
 
+
+def caaWorkaroundPre(infoDict, stateDict):
+    stateDict['iscaa'] = False
+    if 'type' not in infoDict:
+        return
+    if 'CAA' != infoDict['type']:
+        return
+    stateDict['iscaa'] = True
+    del infoDict['type']
+
+
+def caaWorkaroundPost(rv, stateDict):
+    if not stateDict['iscaa']:
+        return
+    rv[:] = [e for e in rv if 'CAA' == e['type']]
 

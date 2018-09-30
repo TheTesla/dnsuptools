@@ -18,11 +18,6 @@ except:
 def extractIds(rv):
     if type(rv) is list:
         return [extractIds(e) for e in rv]
-#    if 'resData' in rv:
-#        if 'record' in rv['resData']:
-#            return [extractIds(e) for e in rv['resData']['record']]
-#        else:
-#            return []
     log.debug(rv)
     return rv['id']
 
@@ -47,20 +42,25 @@ def defaultDictList(baseDict, dictList):
         rvDictList.append(extDict)
     return rvDictList
 
-def matchUpperLabels(rv, filterDict):
-    name = str(filterDict['name'])
-    records = []
-#    if 'record' not in rv['resData']:
-#        return rv
-    #for i, record in enumerate(rv['resData']['record']):
-    for i, record in enumerate(rv):
-        if name.count('.') > record['name'].count('.'):
-            continue
-        elif record['name'].split('.', record['name'].count('.') - name.count('.'))[-1] == name:
-            records.append(record)
-    #rv['resData']['record'] = records
-    rv = records
-    return rv
+def matchUpperLabelsPre(filterDict, stateDict):
+    if 'name' not in filterDict.keys():
+        return 
+    stateDict['name'] = str(filterDict['name'])
+    del filterDict['name']
+
+def matchUpperLabelsPost(rv, stateDict):
+    name = str(stateDict['name'])
+    rv[:] = [e for e in rv if name.count('.') <= e['name'].count('.') if e['name'].split('.', e['name'].count('.') - name.count('.'))[-1] == name]
+
+class MatchUpperLabels:
+    def __init__(self):
+        self.stateDict = {}
+
+    def pre(self, filterDict):
+        matchUpperLabelsPre(filterDict, self.stateDict)
+
+    def post(self, rv):
+        matchUpperLabelsPost(rv, self.stateDict)
 
 
 class DNSUpdate:
@@ -87,17 +87,19 @@ class DNSUpdate:
         log.debug(self.__rv)
         return self.__rv
 
-    def qryWild(self, filterDict, filterFunc = matchUpperLabels):
+    def qryWild(self, filterDict, FilterClsList = [MatchUpperLabels]):
         if type(filterDict) is list:
-            self.__rv = [self.qryWild(e, filterFunc) for e in filterDict]
+            self.__rv = [self.qryWild(e, FilterCls) for e in filterDict]
             return self.__rv
-        filterDictWithName = dict(filterDict)
-        createKeyDomainIfNotExists(filterDict) 
         # -> because at least one key needed
-        if 'name' in filterDict.keys():
-            del filterDict['name']
+        createKeyDomainIfNotExists(filterDict) 
+        filterObjList = [FilterCls() for FilterCls in FilterClsList]
+        for filterObj in reversed(filterObjList):
+            filterObj.pre(filterDict)
         self.__rv = self.qry(filterDict)
-        return filterFunc(self.__rv, filterDictWithName)
+        for filterObj in filterObjList:
+            filterObj.post(self.__rv)
+        return self.__rv
 
     def add(self, updateDict):
         if type(updateDict) is list:
@@ -141,7 +143,6 @@ class DNSUpdate:
         log.debug('deleteRecords {}'.format(deleteOnlyIds))
         for e in deleteOnlyIds:
             rr = self.qry({'recordId': e})
-            #infoRecord(rr['resData']['record'][0], 'delete')
             infoRecord(rr[0], 'delete')
         self.__rv = [self.delById(e) for e in deleteOnlyIds]
         log.debug(self.__rv)
