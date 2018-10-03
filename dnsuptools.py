@@ -15,6 +15,15 @@ except ImportError:
 import socket
 import dns.resolver
 
+def dkimKeySplit(dkimDict):
+    if type(dkimDict) is list:
+        return [dkimKeySplit(e) for e in dkimDict]
+    keyL = dkimDict['keyname'].split('_')
+    dkimDict['keybasename'] = keyL[0]
+    if 1 < len(keyL):
+        dkimDict['keynbr'] = keyL[1]
+    return dkimDict
+
 
 
 def parseDKIMentry(record):
@@ -25,10 +34,7 @@ def parseDKIMentry(record):
     valDict = {e.split('=')[0]: e.split('=')[1] for e in valList if '=' in e}
     dkim = {'keyname': keyList[0], 'dkimlabel': keyList[1]}
     dkim.update(valDict)
-    keyL = dkim['keyname'].split('_')
-    dkim['keybase'] = keyL[0]
-    if 1 < len(keyL):
-        dkim['keynbr'] = keyL[1]
+    dkimKeySplit(dkim)
     return dkim
 
 def formatDKIMentry(name, dkimDict):
@@ -530,12 +536,18 @@ class DNSUpTools(DNSUpdate):
         return rv
 
     def delDKIM(self, name, dkimDelete = {}, dkimPreserve = []):
+        if type(dkimDelete) is dict:
+            dkimDelete = [dkimDelete]
+        if type(dkimPreserve) is dict:
+            dkimPreserve = [dkimPreserve]
         dkimFromFile(dkimDelete)
         dkimFromFile(dkimPreserve)
-        if 'filename' in dkimDelete:
-            del dkimDelete['filename']
-        if 'filename' in dkimPreserve:
-            del dkimPreserve['filename']
+        for i, e in enumerate(dkimDelete):
+            if 'filename' in e:
+                del dkimDelete[i]['filename']
+        for i, e in enumerate(dkimPreserve):
+            if 'filename' in e:
+                del dkimPreserve[i]['filename']
         deleteRv = self.qryDKIM(name, dkimDelete)
         preserveRv = self.qryDKIM(name, dkimPreserve)
         return self.deleteRv(deleteRv, preserveRv)

@@ -31,7 +31,11 @@ def dkimFromFile(dkimDict):
         p = p.split(';')[0]
     except:
         p = None
-    dkimDict.update({'p': p, 'keyname': n, 'v': v, 'k': k})
+    formFileDict = {'p': p, 'keyname': n, 'v': v, 'k': k}
+    for k, v in formFileDict.items():
+        if k in dkimDict.keys():
+            continue
+        dkimDict[k] = v
     return dkimDict
 
 
