@@ -61,7 +61,8 @@ def parseTLSAentry(record):
 def formatTLSAentry(name, tlsaDict):
     if type(tlsaDict) is list:
         return [formatTLSAentry(name, e) for e in tlsaDict]
-    tlsa = tlsaDict
+    tlsa = {'port': '*', 'proto': 'tcp'}
+    tlsa.update(tlsaDict)
     if '*' != tlsa['port']:
         tlsa['port'] = '_{}'.format(tlsa['port'])
     tlsa['tlsa'] = tlsa['tlsa'].replace('\n','')
@@ -341,11 +342,27 @@ class DNSUpTools(DNSUpdate):
         self.delNS(anme, '*', ns)
 
     def addTLSA(self, name, tlsaDict):
-        tlsaDictList = defaultDictList({'port': '*', 'proto' : 'tcp'}, tlsaDict)
+        tlsaDictList = tlsaFromFile(tlsaDict)
         tlsaRRdictList = formatTLSAentry(name, tlsaDictList)
         self.addDictList({}, tlsaRRdictList)
 
-    def delTLSA(self, name, tlsaDelete, tlsaPreserve = []):
+    def delTLSA(self, name, tlsaDelete={}, tlsaPreserve = []):
+        if type(tlsaDelete) is dict:
+            tlsaDelete = [tlsaDelete]
+        if type(tlsaPreserve) is dict:
+            tlsaPreserve = [tlsaPreserve]
+        tlsaFromFile(tlsaDelete)
+        tlsaFromFile(tlsaPreserve)
+        for i, e in enumerate(tlsaDelete):
+            if 'filename' in e:
+                del tlsaDelete[i]['filename']
+            if 'op' in e:
+                del tlsaDelete[i]['op']
+        for i, e in enumerate(tlsaPreserve):
+            if 'filename' in e:
+                del tlsaPreserve[i]['filename']
+            if 'op' in e:
+                del tlsaPreserve[i]['op']
         deleteRv = self.qryTLSA(name, tlsaDelete)
         preserveRv = self.qryTLSA(name, tlsaPreserve)
         return self.deleteRv(deleteRv, preserveRv)
@@ -500,11 +517,11 @@ class DNSUpTools(DNSUpdate):
         return [recordFilter(e, rrRv, parser) for e in rrDict]
 
     def qryTLSA(self, name, tlsaDict = {}):
-        if type(tlsaDict) is dict:
-            tlsaDict = [tlsaDict]
-        for e in tlsaDict:
-            if 'tlsa' in e:
-                e['tlsa'] = e['tlsa'].replace('\n','')
+        #if type(tlsaDict) is dict:
+        #    tlsaDict = [tlsaDict]
+        #for e in tlsaDict:
+        #    if 'tlsa' in e:
+        #        e['tlsa'] = e['tlsa'].replace('\n','')
         return self.qryRR(name, 'TLSA', parseTLSAentry, tlsaDict)
 
     def qrySRV(self, name, srvDict = {}):
