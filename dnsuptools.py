@@ -4,7 +4,7 @@
 from .dnsupdate import *
 from .tlsarecgen import *
 from .dkimrecgen import *
-from .simplelogger import simplelogger as log 
+from simpleloggerplus import simpleloggerplus as log
 
 import pycurl
 try:

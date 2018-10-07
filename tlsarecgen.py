@@ -2,7 +2,7 @@
 # -*- encoding: UTF8 -*-
 
 from subprocess import check_output, Popen, PIPE
-from .simplelogger import simplelogger as log
+from simpleloggerplus import simpleloggerplus as log
 
 def tlsaFromCertFile(certFilename, certConstr = 3, keyOnly = 0, hashType = 1):
     log.debug(certFilename)

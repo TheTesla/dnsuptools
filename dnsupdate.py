@@ -2,9 +2,10 @@
 # -*- encoding: UTF8 -*-
 
 from .inwxclient.inwx import domrobot 
-from .simplelogger import simplelogger as log 
+from simpleloggerplus import simpleloggerplus as log
 from .inwxwrapper import INWXwrapper
 from .dnshelpers import createKeyDomainIfNotExists
+
 
 
 inwxUserDict = {'default': 'user'}
