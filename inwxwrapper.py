@@ -42,15 +42,11 @@ class INWXwrapper:
 
     def getPasswd(self, domain):
         domain = str(domain)
-        if domain not in self.__passwdDict.keys():
-            domain = 'default'
-        return self.__passwdDict[domain]
+        return getDictLike(self.__passwdDict, domain, self.__passwdDict['default'])
 
     def getUser(self, domain):
         domain = str(domain)
-        if domain not in self.__userDict.keys():
-            domain = 'default'
-        return self.__userDict[domain]
+        return getDictLike(self.__userDict, domain, self.__userDict['default'])
 
     def connect(self):
         if self.__isConnected is True:
@@ -144,4 +140,12 @@ def caaWorkaroundPost(rv, stateDict):
     if not stateDict['iscaa']:
         return
     rv[:] = [e for e in rv if 'CAA' == e['type']]
+
+def getDictLike(dataDict, searchFor, default=None, splitChar='.'):
+    splitList = searchFor.split(splitChar)
+    for i in range(len(splitList)):
+        subPart = splitChar.join(splitList[i:])
+        if subPart in dataDict:
+            return dataDict[subPart]
+    return default
 
