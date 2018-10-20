@@ -24,7 +24,8 @@ def dkimKeySplit(dkimDict):
         dkimDict['keynbr'] = keyL[1]
     return dkimDict
 
-
+def parseNSentry(record):
+    return {'ns': record['content']}
 
 def parseDKIMentry(record):
     key = record['name']
@@ -111,8 +112,13 @@ def formatSPFentries(entryDict):
     entryList.extend(allVal)
     return entryList
 
-def qryDNS(nsName, qryName, recType):
+def qryDNS(nsName, qryName, recType, ns=None):
     resolver = dns.resolver.Resolver()
+    if ns is not None:
+        if type(ns) is not list:
+            ns = [ns]
+        if 0 < len(ns):
+            resolver.nameservers = ns
     resolver.nameservers=[socket.gethostbyname(nsName)]
     return [rdata for rdata in resolver.query(qryName, recType)]
 
@@ -269,7 +275,8 @@ class DNSUpTools(DNSUpdate):
     def qrySOA(self, name):
         soaAPI = self.qry({'name': name, 'type': 'SOA'})[0]
         soaList = soaAPI['content'].split(' ')
-        soaNS = qryDNS(soaList[0], name, 'SOA')[0] # extended query for last 4 values - WARNING internal nameserver update takes time, consecutive updates may result in inconsistencies
+        ns = [e['content'] for e in self.qryNS(name)[0]]
+        soaNS = qryDNS(soaList[0], name, 'SOA', ns)[0] # extended query for last 4 values - WARNING internal nameserver update takes time, consecutive updates may result in inconsistencies
         return soaQRYs2dict(soaNS, soaAPI)
 
     def setSOAentry(self, name, updSOAdict):
@@ -336,6 +343,10 @@ class DNSUpTools(DNSUpdate):
 
     def delNS(self, name, nsDelete = '*', nsPreserve = []):
         self.delList({'name': name, 'type': 'NS'}, nsDelete, nsPreserve)
+
+    def qryNS(self, name):
+        return self.qryRR(name, 'NS')
+
 
     def setNS(self, name, ns):
         self.addNS(name, ns)
@@ -510,7 +521,7 @@ class DNSUpTools(DNSUpdate):
         srvRRdictList = formatSRVentry(name, srvDictList)
         self.addDictList({}, srvRRdictList)
 
-    def qryRR(self, name, rrType, parser, rrDict = {}, qryFilters=[MatchUpperLabels]):
+    def qryRR(self, name, rrType, parser=None, rrDict = {}, qryFilters=[MatchUpperLabels]):
         rrRv = self.qryWild({'name': name, 'type': rrType}, qryFilters)
         if type(rrDict) is dict:
             rrDict = [rrDict]
