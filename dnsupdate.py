@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding: UTF8 -*-
 
-from .inwxclient.inwx import domrobot 
 from simpleloggerplus import simpleloggerplus as log
 from .inwxwrapper import INWXwrapper
 from .dnshelpers import createKeyDomainIfNotExists
