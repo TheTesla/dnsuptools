@@ -2,7 +2,7 @@
 # -*- encoding: UTF8 -*-
 
 from dnsupdate import *
-from passwords import *
+from .passwords import *
 import sys
 
 
