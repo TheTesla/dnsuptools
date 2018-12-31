@@ -33,7 +33,7 @@ def parseDKIMentry(record):
     val = record['content'].replace(' ', '')
     valList = val.split(';')
     valDict = {e.split('=')[0]: e.split('=')[1] for e in valList if '=' in e}
-    dkim = {'keyname': keyList[0], 'dkimlabel': keyList[1]}
+    dkim = {'name': '.'.join(keyList[2:]), 'keyname': keyList[0], 'dkimlabel': keyList[1]}
     dkim.update(valDict)
     dkimKeySplit(dkim)
     return dkim
@@ -51,7 +51,7 @@ def parseTLSAentry(record):
     keyList = key.split('.')
     val = record['content']
     valList = val.split(' ')
-    tlsa = {'port': keyList[0], 'proto': keyList[1], 'usage': valList[0], 'selector': valList[1], 'matchingtype': valList[2], 'tlsa': valList[3]}
+    tlsa = {'name': '.'.join(keyList[2:]), 'port': keyList[0], 'proto': keyList[1], 'usage': valList[0], 'selector': valList[1], 'matchingtype': valList[2], 'tlsa': valList[3]}
     if '_' == tlsa['port'][0]:
         tlsa['port'] = tlsa['port'][1:]
     if '_' == tlsa['proto'][0]:
@@ -75,7 +75,7 @@ def parseSRVentry(record):
     keyList = key.split('.')
     val = record['content']
     valList = val.split(' ')
-    srv = {'service': keyList[0][1:], 'proto': keyList[1][1:], 'weight': valList[0], 'port': valList[1], 'server': valList[2], 'prio': record['prio']}
+    srv = {'name': '.'.join(keyList[2:]), 'service': keyList[0][1:], 'proto': keyList[1][1:], 'weight': valList[0], 'port': valList[1], 'server': valList[2], 'prio': record['prio']}
     return srv
 
 def formatSRVentry(name, srvDict):
