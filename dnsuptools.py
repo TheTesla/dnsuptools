@@ -523,8 +523,11 @@ class DNSUpTools(DNSUpdate):
 
     def qryRR(self, name, rrType, parser=None, rrDict = {}, qryFilters=[MatchUpperLabels]):
         rrRv = self.qryWild({'name': name, 'type': rrType}, qryFilters)
+        log.debug(rrRv)
         if type(rrDict) is dict:
             rrDict = [rrDict]
+        for i, e in enumerate(rrDict):
+            rrDict[i]['name'] = name
         return [recordFilter(e, rrRv, parser) for e in rrDict]
 
     def qryTLSA(self, name, tlsaDict = {}):
