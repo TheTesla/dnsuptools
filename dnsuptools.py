@@ -49,9 +49,11 @@ def formatDKIMentry(name, dkimDict):
 def parseTLSAentry(record):
     key = record['name']
     keyList = key.split('.')
+    log.debug(keyList)
     val = record['content']
     valList = val.split(' ')
     tlsa = {'name': '.'.join(keyList[2:]), 'port': keyList[0], 'proto': keyList[1], 'usage': valList[0], 'selector': valList[1], 'matchingtype': valList[2], 'tlsa': valList[3]}
+    #tlsa = {'port': keyList[0], 'proto': keyList[1], 'usage': valList[0], 'selector': valList[1], 'matchingtype': valList[2], 'tlsa': valList[3]}
     if '_' == tlsa['port'][0]:
         tlsa['port'] = tlsa['port'][1:]
     if '_' == tlsa['proto'][0]:
@@ -260,6 +262,7 @@ def soaQRYs2dict(soaNSqry, soaAPIqry):
 def recordFilter(entry, records, parser=None):
     result = []
     for rr in records:
+        rr = dict(rr)
         if parser is not None:
             rr.update(parser(rr))
         if not isSubDict(entry, rr):
