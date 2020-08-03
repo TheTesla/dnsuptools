@@ -84,6 +84,9 @@ def formatSRVentry(name, srvDict):
     if type(srvDict) is list:
         return [formatSRVentry(name, e) for e in srvDict]
     srv = srvDict
+    for k in ['service', 'proto', 'prio', 'weight', 'port', 'server']:
+        if k not in srv:
+            log.warn('Missing member \"{}\" in SRV entry!'.format(k))
     return {'name': '_{x[service]}._{x[proto]}.{name}'.format(x=srv, name=str(name)), 'type': 'SRV', 'prio': srv['prio'], 'content': '{x[weight]} {x[port]} {x[server]}'.format(x=srv)}
 
 
@@ -104,7 +107,7 @@ def parseSPFentries(entryList):
         else:
             entryDict[e] = '+'
     return entryDict
-    
+ 
 def formatSPFentries(entryDict):
     allVal = []
     if 'all' in entryDict:
@@ -521,8 +524,12 @@ class DNSUpTools(DNSUpdate):
     def addSRV(self, name, srvDict):
         log.debug(srvDict)
         srvDictList = defaultDictList({'prio': 10, 'weight' : 0}, srvDict)
-        srvRRdictList = formatSRVentry(name, srvDictList)
-        self.addDictList({}, srvRRdictList)
+        try:
+            srvRRdictList = formatSRVentry(name, srvDictList)
+            self.addDictList({}, srvRRdictList)
+        except KeyError as e:
+            log.warn('Not adding SRV record!')
+
 
     def qryRR(self, name, rrType, parser=None, rrDict = {}, qryFilters=[MatchUpperLabels]):
         rrRv = self.qryWild({'name': name, 'type': rrType}, qryFilters)

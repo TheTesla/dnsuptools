@@ -8,8 +8,8 @@ def tlsaFromCertFile(certFilename, certConstr = 3, keyOnly = 0, hashType = 1):
     log.debug(certFilename)
     certCont = check_output(('cat', str(certFilename)))
     if 2 == int(certConstr) or 0 == int(certConstr):
-        certCont = certCont.split('-----END CERTIFICATE-----')[1] 
-        certCont += '-----END CERTIFICATE-----'
+        certCont = certCont.split(b'-----END CERTIFICATE-----')[1] 
+        certCont += b'-----END CERTIFICATE-----'
     ps = Popen(('echo', '-e', certCont), stdout=PIPE)
     if 0 == int(keyOnly):
         ps = Popen(('openssl', 'x509', '-outform', 'DER'), stdout=PIPE, stdin=ps.stdout)
@@ -21,7 +21,7 @@ def tlsaFromCertFile(certFilename, certConstr = 3, keyOnly = 0, hashType = 1):
     elif 2 == int(hashType):
         output = check_output(('openssl', 'sha512'), stdin=ps.stdout)
     log.debug(output)
-    return output.split(' ')[1]
+    return output.split(b' ')[1]
 
 def tlsaRecordsFromCertFile(certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]): 
     tlsaList = []
@@ -40,5 +40,5 @@ def tlsaFromFile(tlsaDict):
     if 'filename' not in tlsaDict:
         return tlsaDict
     tlsaDict['tlsa'] = tlsaFromCertFile(tlsaDict['filename'], tlsaDict['usage'], tlsaDict['selector'], tlsaDict['matchingtype'])
-    tlsaDict['tlsa'] = tlsaDict['tlsa'].replace('\n', '')
+    tlsaDict['tlsa'] = tlsaDict['tlsa'].replace(b'\n', b'')
     return tlsaDict
