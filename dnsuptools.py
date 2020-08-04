@@ -30,7 +30,7 @@ def parseNSentry(record):
 def parseDKIMentry(record):
     key = record['name']
     keyList = key.split('.')
-    val = record['content'].replace(' ', '')
+    val = record['content'].replace(b' ', b'')
     valList = val.split(';')
     valDict = {e.split('=')[0]: e.split('=')[1] for e in valList if '=' in e}
     dkim = {'name': '.'.join(keyList[2:]), 'keyname': keyList[0], 'dkimlabel': keyList[1]}
@@ -58,7 +58,7 @@ def parseTLSAentry(record):
         tlsa['port'] = tlsa['port'][1:]
     if '_' == tlsa['proto'][0]:
         tlsa['proto'] = tlsa['proto'][1:]
-    tlsa['tlsa'] = tlsa['tlsa'].replace('\n','')
+    tlsa['tlsa'] = tlsa['tlsa'].replace(b'\n',b'')
     return tlsa
 
 def formatTLSAentry(name, tlsaDict):
@@ -68,7 +68,7 @@ def formatTLSAentry(name, tlsaDict):
     tlsa.update(tlsaDict)
     if '*' != tlsa['port']:
         tlsa['port'] = '_{}'.format(tlsa['port'])
-    tlsa['tlsa'] = tlsa['tlsa'].replace('\n','')
+    tlsa['tlsa'] = tlsa['tlsa'].replace(b'\n',b'')
     return {'name': '{x[port]}._{x[proto]}.{name}'.format(x=tlsa, name=str(name)), 'type': 'TLSA', 'content': '{x[usage]} {x[selector]} {x[matchingtype]} {x[tlsa]}'.format(x=tlsa)}
 
 
@@ -128,7 +128,7 @@ def qryDNS(nsName, qryName, recType, ns=None):
     return [rdata for rdata in resolver.query(qryName, recType)]
 
 def parseDMARC(dmarcStr):
-    return {e.split('=')[0].replace(' ',''): e.split('=')[1].replace(' ','') for e in dmarcStr.split(';')}
+    return {e.split('=')[0].replace(b' ',b''): e.split('=')[1].replace(b' ',b'') for e in dmarcStr.split(b';')}
 
 def formatDMARC(dmarcDict):
     v = 'v={v}'.format(v=dmarcDict['v'])
@@ -209,7 +209,7 @@ def encDNSemail(x):
     if 1 == len(xSpl):
         return x
     elif 1 < len(xSpl):
-        return xSpl[0].replace('.', '\\.') + '.' + xSpl[1] + '.'
+        return xSpl[0].replace(b'.', b'\\.') + '.' + xSpl[1] + '.'
     else:
         raise(TypeError('No valid email address'))
 
