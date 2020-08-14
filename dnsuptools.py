@@ -409,7 +409,7 @@ class DNSUpTools(DNSUpdate):
             return
         rrQ = self.qrySPF(name)
         if 0 == len(rrQ):
-            self.setSPF(name, parseSPFentries(set(spfADD)))
+            self.setSPF(name, formatSPFentries(parseSPFentries(set(spfADD))))
             return
         spfQ = rrQ[0]['content'].split(' ')
         spfID = rrQ[0]['id']
