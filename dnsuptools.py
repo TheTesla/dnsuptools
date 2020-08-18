@@ -438,7 +438,7 @@ class DNSUpTools(DNSUpdate):
         if 0 == len(spf):
             if rrID is None:
                 return
-            self.delById(rrID)
+            self.delete({'recordId': rrID})
             return
         spf = ' '.join(formatSPFentries(parseSPFentries(spf)))
         txt = genSPF(spf, None, v)
@@ -449,7 +449,7 @@ class DNSUpTools(DNSUpdate):
 
     def delDMARC(self, name):
         self.delTXT('_dmarc.'+str(name))
-    
+
     # only one DMARC record allowed
     def setDMARC(self, name, dmarcDict):
         log.debug(dmarcDict)
