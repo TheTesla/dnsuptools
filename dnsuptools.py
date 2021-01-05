@@ -30,7 +30,7 @@ def parseNSentry(record):
 def parseDKIMentry(record):
     key = record['name']
     keyList = key.split('.')
-    val = record['content'].replace(b' ', b'')
+    val = record['content'].replace(' ', '')
     valList = val.split(';')
     valDict = {e.split('=')[0]: e.split('=')[1] for e in valList if '=' in e}
     dkim = {'name': '.'.join(keyList[2:]), 'keyname': keyList[0], 'dkimlabel': keyList[1]}
@@ -272,7 +272,7 @@ def recordFilter(entry, records, parser=None):
             continue
         result.append(rr)
     return result
-    
+
 
 class DNSUpTools(DNSUpdate):
     def __init__(self):
@@ -533,7 +533,6 @@ class DNSUpTools(DNSUpdate):
 
     def qryRR(self, name, rrType, parser=None, rrDict = {}, qryFilters=[MatchUpperLabels]):
         rrRv = self.qryWild({'name': name, 'type': rrType}, qryFilters)
-        log.debug(rrRv)
         if type(rrDict) is dict:
             rrDict = [rrDict]
         for i, e in enumerate(rrDict):
@@ -541,11 +540,6 @@ class DNSUpTools(DNSUpdate):
         return [recordFilter(e, rrRv, parser) for e in rrDict]
 
     def qryTLSA(self, name, tlsaDict = {}):
-        #if type(tlsaDict) is dict:
-        #    tlsaDict = [tlsaDict]
-        #for e in tlsaDict:
-        #    if 'tlsa' in e:
-        #        e['tlsa'] = e['tlsa'].replace('\n','')
         return self.qryRR(name, 'TLSA', parseTLSAentry, tlsaDict)
 
     def qrySRV(self, name, srvDict = {}):
@@ -572,7 +566,7 @@ class DNSUpTools(DNSUpdate):
         self.addDKIM(name, dkimDictList)
 
     def qryDKIM(self, name, dkimDict):
-        rv = self.qryRR('_domainkey.{}'.format(name), 'TXT', parseDKIMentry, dkimDict)
+        rv = self.qryRR(name, 'TXT', parseDKIMentry, dkimDict)
         rv = [f for e in rv for f in e if f['keyname'] != '_adsp']
         return rv
 

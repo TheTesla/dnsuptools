@@ -44,7 +44,7 @@ def defaultDictList(baseDict, dictList):
 
 def matchUpperLabelsPre(filterDict, stateDict):
     if 'name' not in filterDict.keys():
-        return 
+        return
     stateDict['name'] = str(filterDict['name'])
     del filterDict['name']
 
@@ -67,7 +67,7 @@ class DNSUpdate:
     '''Class allows updating zone entries'''
     def __init__(self):
         self.handler = None
-        self.defaultTTL = 600 
+        self.defaultTTL = 600
 
     def setHandler(self, handler):
         if type(handler) is str:
@@ -92,7 +92,7 @@ class DNSUpdate:
             self.__rv = [self.qryWild(e, FilterCls) for e in filterDict]
             return self.__rv
         # -> because at least one key needed
-        createKeyDomainIfNotExists(filterDict) 
+        createKeyDomainIfNotExists(filterDict)
         filterObjList = [FilterCls() for FilterCls in FilterClsList]
         for filterObj in reversed(filterObjList):
             filterObj.pre(filterDict)
@@ -192,7 +192,7 @@ class DNSUpdate:
     def addDictList(self, baseRecord, dictList):
         addList = defaultDictList(baseRecord, dictList)
         self.add(addList)
-    
+
     def delList(self, baseRecord, contentDelete = '*', contentPreserve = [], wild = False):
         if type(contentDelete) is str:
             contentDelete = [contentDelete]
