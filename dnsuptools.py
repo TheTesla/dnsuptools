@@ -58,7 +58,7 @@ def parseTLSAentry(record):
         tlsa['port'] = tlsa['port'][1:]
     if '_' == tlsa['proto'][0]:
         tlsa['proto'] = tlsa['proto'][1:]
-    tlsa['tlsa'] = tlsa['tlsa'].replace(b'\n',b'')
+    tlsa['tlsa'] = tlsa['tlsa'].replace('\n','')
     return tlsa
 
 def formatTLSAentry(name, tlsaDict):
@@ -87,6 +87,7 @@ def formatSRVentry(name, srvDict):
     for k in ['service', 'proto', 'prio', 'weight', 'port', 'server']:
         if k not in srv:
             log.warn('Missing member \"{}\" in SRV entry!'.format(k))
+            return {}
     return {'name': '_{x[service]}._{x[proto]}.{name}'.format(x=srv, name=str(name)), 'type': 'SRV', 'prio': srv['prio'], 'content': '{x[weight]} {x[port]} {x[server]}'.format(x=srv)}
 
 
@@ -128,7 +129,7 @@ def qryDNS(nsName, qryName, recType, ns=None):
     return [rdata for rdata in resolver.query(qryName, recType)]
 
 def parseDMARC(dmarcStr):
-    return {e.split('=')[0].replace(b' ',b''): e.split('=')[1].replace(b' ',b'') for e in dmarcStr.split(b';')}
+    return {e.split('=')[0].replace(' ',''): e.split('=')[1].replace(' ','') for e in dmarcStr.split(';')}
 
 def formatDMARC(dmarcDict):
     v = 'v={v}'.format(v=dmarcDict['v'])
@@ -408,7 +409,7 @@ class DNSUpTools(DNSUpdate):
             return
         rrQ = self.qrySPF(name)
         if 0 == len(rrQ):
-            self.setSPF(name, parseSPFentries(set(spfADD)))
+            self.setSPF(name, formatSPFentries(parseSPFentries(set(spfADD))))
             return
         spfQ = rrQ[0]['content'].split(' ')
         spfID = rrQ[0]['id']
@@ -437,7 +438,7 @@ class DNSUpTools(DNSUpdate):
         if 0 == len(spf):
             if rrID is None:
                 return
-            self.delById(rrID)
+            self.delete({'recordId': rrID})
             return
         spf = ' '.join(formatSPFentries(parseSPFentries(spf)))
         txt = genSPF(spf, None, v)
@@ -448,7 +449,7 @@ class DNSUpTools(DNSUpdate):
 
     def delDMARC(self, name):
         self.delTXT('_dmarc.'+str(name))
-    
+
     # only one DMARC record allowed
     def setDMARC(self, name, dmarcDict):
         log.debug(dmarcDict)
@@ -503,7 +504,10 @@ class DNSUpTools(DNSUpdate):
 
 
     def addCAA(self, name, caaDict):
-        self.addList({'name': str(name), 'type': 'CAA'}, genCAA(caaDict))
+        try:
+            self.addList({'name': str(name), 'type': 'CAA'}, genCAA(caaDict))
+        except KeyError as e:
+            log.warn('Not adding CAA record!')
 
     def setCAA(self, name, caaDict):
         self.addCAA(name, caaDict)
@@ -524,11 +528,8 @@ class DNSUpTools(DNSUpdate):
     def addSRV(self, name, srvDict):
         log.debug(srvDict)
         srvDictList = defaultDictList({'prio': 10, 'weight' : 0}, srvDict)
-        try:
-            srvRRdictList = formatSRVentry(name, srvDictList)
-            self.addDictList({}, srvRRdictList)
-        except KeyError as e:
-            log.warn('Not adding SRV record!')
+        srvRRdictList = formatSRVentry(name, srvDictList)
+        self.addDictList({}, srvRRdictList)
 
 
     def qryRR(self, name, rrType, parser=None, rrDict = {}, qryFilters=[MatchUpperLabels]):

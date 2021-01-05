@@ -14,7 +14,7 @@ def dkimFromFile(dkimDict):
         return dkimDict
     dkimFilename = dkimDict['filename']
     dkimCont = check_output(('cat', str(dkimFilename)))
-    dkimCont = re.sub('[\"\n\r\t\(\)\ ]', '', dkimCont)
+    dkimCont = re.sub('["\n\r\t() ]', '', dkimCont)
     n = dkimCont.split('._domainkey')[0]
     try:
         v = dkimCont.split('v=')[1]
