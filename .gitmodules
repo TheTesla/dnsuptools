@@ -1,3 +1,0 @@
-[submodule "dnsuptools"]
-	path = dnsuptools
-	url = git@github.com:TheTesla/dnsuptools.git

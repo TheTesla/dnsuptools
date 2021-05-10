@@ -1,0 +1,4 @@
+simpleloggerplus
+dnspython
+pycurl
+inwx-domrobot
