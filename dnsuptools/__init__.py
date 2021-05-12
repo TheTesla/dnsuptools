@@ -5,6 +5,6 @@ import git
 
 repo = git.Repo(search_parent_directories=False)
 
-__version__ = repo.git.describe('--tags')
+__version__ = '-'.join(repo.git.describe('--tags').split('-')[:2])
 
 
