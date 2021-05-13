@@ -110,7 +110,7 @@ class INWXwrapper:
     def create(self, createDict):
         createKeyDomainIfNotExists(createDict)
         self.login(createDict['domain'])
-        return self.__conn.call_api(api_method='nameserver.create', method_params=createDict)
+        return self.__conn.call_api(api_method='nameserver.createRecord', method_params=createDict)
 
     # warning: no autologin, if no domain and no name provided
     #          - that is when you support only the record id
@@ -119,13 +119,13 @@ class INWXwrapper:
     #          happen by providing domain or name
     def delete(self, deleteDict):
         self.autologin(deleteDict)
-        return self.__conn.nameserver.deleteRecord(deleteDict)
+        return self.__conn.call_api(api_method='nameserver.deleteRecord', method_params=deleteDict)
 
     def update(self, updateDict):
         self.autologin(updateDict)
         if 'domain' in updateDict:
             del updateDict['domain']
-        return self.__conn.call_api(api_method='nameserver.update', method_params=updateDict)
+        return self.__conn.call_api(api_method='nameserver.updateRecord', method_params=updateDict)
 
 
 def caaWorkaroundPre(infoDict, stateDict):
