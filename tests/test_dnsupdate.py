@@ -31,6 +31,20 @@ class TestDNSUpdate(unittest.TestCase):
         self.assertEqual(y, [{'x': 1, 'y': 2}, {'x': 1, 'y': 2, 'z': 3}, {'x': 3, 'y': 2}, {'x': 3, 'y': 4}, {'x': 5, 'y': 6, 'z': 7}])
 
 
+    def testMatchUpperLabels(self):
+        mul = dnsupdate.MatchUpperLabels()
+        fltr = {'name': 'sub.domain.local', 'domain': 'domain.local'}
+        x = [{'name': 'sub.domain.local'}, {'name': 'domain.local'}, {'name': 'very.sub.domain.local'}]
+        mul.pre(fltr)
+        mul.post(x)
+        with self.subTest("MatchUpperLabels.pre(filterDict)"):
+            self.assertEqual(fltr, {'domain': 'domain.local'})
+        with self.subTest("MatchUpperLabels.stateDict"):
+            self.assertEqual(mul.stateDict, {'name': 'sub.domain.local'})
+        with self.subTest("MatchUpperLabels.post(rv)"):
+            self.assertEqual(x, [{'name': 'sub.domain.local'}, {'name': 'very.sub.domain.local'}]
+)
+
 
 
 

@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- encoding: UTF8 -*-
 
-from dnsuptools.dnsupdate import *
-from dnsuptools.tlsarecgen import *
-from dnsuptools.dkimrecgen import *
+from dnsuptools.dnsupdate import defaultDictList, MatchUpperLabels, DNSUpdate
+from dnsuptools.tlsarecgen import tlsaRecordsFromCertFile, tlsaFromFile
+from dnsuptools.dkimrecgen import dkimFromFile
 from simpleloggerplus import simpleloggerplus as log
 
 import pycurl
@@ -399,7 +399,7 @@ class DNSUpTools(DNSUpdate):
     def delTLSApreserveFromCert(self, name, tlsaDelete = {}, certFilenamesPreserve = []):
         self.delTLSA(name, tlsaDelete, tlsaRecordsFromCertFile(certFilenamesPreserve))
 
-    def setTLSAfromCert(self, name, certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]): 
+    def setTLSAfromCert(self, name, certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]):
         if 'auto' == str(tlsaTypes):
             tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]
         self.setTLSA(name, tlsaRecordsFromCertFile(certFilenames, tlsaTypes))

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- encoding: UTF8 -*-
 
-#from inwxclient.inwx import domrobot
 from INWX.Domrobot import ApiClient
 
 from simpleloggerplus import simpleloggerplus as log
@@ -15,7 +14,7 @@ class INWXwrapper:
     def __init__(self):
         global inwxUserDict
         global inwxPasswdDict
-        self.__apiUrl = ApiClient.API_LIVE_URL # 'https://api.domrobot.com/xmlrpc/'
+        self.__apiUrl = ApiClient.API_LIVE_URL
         self.__conn = None
         self.__userDict = {'default': 'user'}
         self.__passwdDict = {'default': 'passwd'}
@@ -96,7 +95,6 @@ class INWXwrapper:
     # Yes, login also for info needed!
     def info(self, infoDict):
         self.autologin(infoDict)
-        #return self.__conn.nameserver.info(infoDict)
         stateDict = {}
         caaWorkaroundPre(infoDict, stateDict)
         rv = self.__conn.call_api(api_method='nameserver.info', method_params=infoDict)

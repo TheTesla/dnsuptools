@@ -1,10 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- encoding: UTF8 -*-
 
-from subprocess import *
-import re
-
-#def dkimFromFile(dkimFilename):
 def dkimFromFile(dkimDict):
     if type(dkimDict) is list:
         rv = [dkimFromFile(e) for e in dkimDict]
@@ -13,10 +9,10 @@ def dkimFromFile(dkimDict):
     if 'filename' not in dkimDict:
         return dkimDict
     dkimFilename = dkimDict['filename']
-    dkimCont = check_output(('cat', str(dkimFilename)))
-    dkimCont = dkimCont.decode()
-    print(dkimCont)
-    dkimCont = re.sub('["\n\r\t() ]', '', dkimCont)
+    with open(dkimFilename, 'r') as f:
+        dkimCont = f.read()
+    for r in ['"', '\n', '\r', '\t', '(', ')', ' ']:
+        dkimCont = dkimCont.replace(r, '')
     n = dkimCont.split('._domainkey')[0]
     try:
         v = dkimCont.split('v=')[1]
