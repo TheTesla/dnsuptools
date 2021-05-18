@@ -6,14 +6,10 @@ from dnsuptools import dnsupdate
 from tests.passwords import inwxUserDict, inwxPasswdDict
 
 testdomain = "test23.bahn.cf"
+#testdomain = "bahn.cf"
 
-class TestDNSUpdate(unittest.TestCase):
-    def setUp(self):
-        self.dnsUpdate = dnsupdate.DNSUpdate()
-        self.dnsUpdate.setHandler('inwx')
-        self.dnsUpdate.handler.setUserDict(inwxUserDict)
-        self.dnsUpdate.handler.setPasswdDict(inwxPasswdDict)
 
+class TestDNSUpdateMiscFncs(unittest.TestCase):
     def testFlatten(self):
         x = [1,2,3,[4,5,[6],7],8]
         y = dnsupdate.flatten(x)
@@ -47,7 +43,12 @@ class TestDNSUpdate(unittest.TestCase):
 
 
 
-
+class TestDNSUpdate(unittest.TestCase):
+    def setUp(self):
+        self.dnsUpdate = dnsupdate.DNSUpdate()
+        self.dnsUpdate.setHandler('inwx')
+        self.dnsUpdate.handler.setUserDict(inwxUserDict)
+        self.dnsUpdate.handler.setPasswdDict(inwxPasswdDict)
 
     def testDNSops(self):
         self.dnsUpdate.delete({'name': testdomain})
@@ -70,6 +71,23 @@ class TestDNSUpdate(unittest.TestCase):
         qry = self.dnsUpdate.qry({'name': testdomain})
         with self.subTest("Query result length after last delete 0"):
             self.assertEqual(len(qry), 0)
+
+    def testWildcards(self):
+        self.dnsUpdate.delete({'name': testdomain}, [], True)
+        recsAdded = [{'name': 'text.ns42.'+testdomain, 'type': 'TXT', 'content': 'x'}, \
+                     {'name': 'ns42.'+testdomain, 'type': 'NS', 'content': 'ns23.xmpl'}, \
+                     {'name': 'mx42.'+testdomain, 'type': 'MX', 'content': 'mx23.xmpl'}, \
+                     {'name': testdomain, 'type': 'A', 'content': '1.2.3.4'}]
+        self.dnsUpdate.add(recsAdded)
+        qry = self.dnsUpdate.qryWild({'name': testdomain})
+        names = {e['name'] for e in qry}
+        with self.subTest("Check if all names are there"):
+            self.assertEqual(names, {'text.ns42.'+testdomain, 'ns42.'+testdomain, 'mx42.'+testdomain, testdomain})
+        recsAddedDict = {e['name']: {k: v for k, v in e.items() if k in ['type', 'content']} for e in recsAdded}
+        recsQrydDict = {e['name']: {k: v for k, v in e.items() if k in ['type', 'content']} for e in qry}
+        with self.subTest("Check if name, type and content are correct"):
+            self.assertEqual(recsQrydDict, recsAddedDict)
+
 
 
 
