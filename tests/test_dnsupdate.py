@@ -87,6 +87,17 @@ class TestDNSUpdate(unittest.TestCase):
         recsQrydDict = {e['name']: {k: v for k, v in e.items() if k in ['type', 'content']} for e in qry}
         with self.subTest("Check if name, type and content are correct"):
             self.assertEqual(recsQrydDict, recsAddedDict)
+        self.dnsUpdate.delete({'name': testdomain}, [{'name': testdomain,'type': 'NS'}, {'name': testdomain, 'content': 'mx23.xmpl'}, {'name': testdomain, 'content': '1.2.3.4', 'type': 'TXT'}], True)
+        qry = self.dnsUpdate.qryWild({'name': testdomain})
+        recsQrydDict = {e['name']: {k: v for k, v in e.items() if k in ['type', 'content']} for e in qry}
+        print(recsQrydDict)
+        with self.subTest("Check if name, type and content are correct, after preserve"):
+            self.assertEqual(recsQrydDict, {'mx42.'+testdomain: {'type': 'MX', 'content': 'mx23.xmpl'}, 'ns42.'+testdomain: {'type': 'NS', 'content': 'ns23.xmpl'}})
+        self.dnsUpdate.update({'name': 'mx42.'+testdomain}, {'name': 'mx42.'+testdomain, 'type': 'MX', 'content': 'mx1337.xmpl'})
+        qry = self.dnsUpdate.qryWild({'name': testdomain})
+        recsQrydDict = {e['name']: {k: v for k, v in e.items() if k in ['type', 'content']} for e in qry}
+        with self.subTest("Check if name, type and content are correct, after update"):
+            self.assertEqual(recsQrydDict, {'mx42.'+testdomain: {'type': 'MX', 'content': 'mx1337.xmpl'}, 'ns42.'+testdomain: {'type': 'NS', 'content': 'ns23.xmpl'}})
 
 
 

@@ -89,7 +89,7 @@ class DNSUpdate:
 
     def qryWild(self, filterDict, FilterClsList = [MatchUpperLabels]):
         if type(filterDict) is list:
-            self.__rv = [self.qryWild(e, FilterCls) for e in filterDict]
+            self.__rv = [self.qryWild(e, FilterClsList) for e in filterDict]
             return self.__rv
         # -> because at least one key needed
         createKeyDomainIfNotExists(filterDict)
