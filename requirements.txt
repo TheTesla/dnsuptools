@@ -1,4 +1,5 @@
 simpleloggerplus
 dnspython
 pycurl
+pyOpenSSL
 inwx-domrobot
