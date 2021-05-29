@@ -107,6 +107,7 @@ class TestDNSUpdate(unittest.TestCase):
                      {'name': turl, 'content': '1.2.3.4', 'type': 'TXT'}]
         recsRem = recsAdded[1:3]
         recUpd = {'name': 'mx42.'+turl, 'type': 'MX', 'content': 'mx1337.xmpl'}
+        recsNew = [recsAdded[1], recUpd]
         self.dnsu.add(recsAdded)
         qry = self.dnsu.qryWild({'name': turl})
         names = {e['name'] for e in qry}
@@ -121,13 +122,13 @@ class TestDNSUpdate(unittest.TestCase):
         qry = self.dnsu.qryWild({'name': turl})
         recsQrydDict = filterResult(qry, 'name', ['type', 'content'])
         recsRemDict = filterResult(recsRem, 'name', ['type', 'content'])
-        with self.subTest("Check if name, type and content are correct, after preserve"):
+        with self.subTest("Are name, type, content correct, after preserve?"):
             self.assertEqual(recsQrydDict, recsRemDict)
         self.dnsu.update({'name': 'mx42.'+turl}, recUpd)
         qry = self.dnsu.qryWild({'name': turl})
         recsQrydDict = filterResult(qry, 'name', ['type', 'content'])
-        recsNewDict = filterResult([recsAdded[1], recUpd], 'name', ['type', 'content'])
-        with self.subTest("Check if name, type and content are correct, after update"):
+        recsNewDict = filterResult(recsNew, 'name', ['type', 'content'])
+        with self.subTest("Are name, typ, content correct, after update?"):
             self.assertEqual(recsQrydDict, recsNewDict)
 
 
