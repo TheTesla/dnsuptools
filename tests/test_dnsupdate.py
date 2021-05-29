@@ -5,11 +5,14 @@ import unittest
 from dnsuptools import dnsupdate
 from tests.passwords import inwxUserDict, inwxPasswdDict
 
-testdomain = "test23.bahn.cf"
-#testdomain = "bahn.cf"
+turl = "test23.bahn.cf"
+#turl = "bahn.cf"
 
 def filterResult(x, pkeys, skeys):
-    pkeys = list(pkeys)
+    if type(pkeys) is not list:
+        pkeys = [pkeys]
+    if type(skeys) is not list:
+        skeys = [skeys]
     return {'_'.join([str(e[pkey]) for pkey in pkeys]): \
             {k: v for k, v in e.items() if k in skeys} for e in x}
 
@@ -20,21 +23,23 @@ class TestDNSUpdateMiscFncs(unittest.TestCase):
         self.assertEqual(y, [1,2,3,4,5,6,7,8])
 
     def testExtractIDs(self):
-        x = [{'id': 1, 'test': 'a'},{'id': 2},[{'id': 3}, {'id': 4},[{'id': 5}],{'id': 6}]]
+        x = [{'id':1,'xy':'a'},{'id':2},[{'id':3},{'id':4},[{'id':5}],{'id':6}]]
         y = dnsupdate.extractIds(x)
         self.assertEqual(y, [1,2,[3,4,[5],6]])
 
     def testDefaultDictList(self):
-        baseDict = {'x': 1, 'y': 2}
-        dictList = [{}, {'z': 3}, {'x': 3}, {'x': 3, 'y': 4}, {'x': 5, 'y': 6, 'z': 7}]
+        baseDict = {'x':1,'y':2}
+        dictList = [{},{'z':3},{'x':3},{'x':3,'y':4},{'x':5,'y':6,'z':7}]
         y = dnsupdate.defaultDictList(baseDict, dictList)
-        self.assertEqual(y, [{'x': 1, 'y': 2}, {'x': 1, 'y': 2, 'z': 3}, {'x': 3, 'y': 2}, {'x': 3, 'y': 4}, {'x': 5, 'y': 6, 'z': 7}])
+        self.assertEqual(y, [{'x':1,'y':2},{'x':1,'y':2,'z':3},{'x':3,'y':2},
+                             {'x':3,'y':4},{'x':5,'y':6,'z':7}])
 
 
     def testMatchUpperLabels(self):
         mul = dnsupdate.MatchUpperLabels()
         fltr = {'name': 'sub.domain.local', 'domain': 'domain.local'}
-        x = [{'name': 'sub.domain.local'}, {'name': 'domain.local'}, {'name': 'very.sub.domain.local'}]
+        x = [{'name': 'sub.domain.local'}, {'name': 'domain.local'},
+             {'name': 'very.sub.domain.local'}]
         mul.pre(fltr)
         mul.post(x)
         with self.subTest("MatchUpperLabels.pre(filterDict)"):
@@ -42,85 +47,92 @@ class TestDNSUpdateMiscFncs(unittest.TestCase):
         with self.subTest("MatchUpperLabels.stateDict"):
             self.assertEqual(mul.stateDict, {'name': 'sub.domain.local'})
         with self.subTest("MatchUpperLabels.post(rv)"):
-            self.assertEqual(x, [{'name': 'sub.domain.local'}, {'name': 'very.sub.domain.local'}])
+            self.assertEqual(x, [{'name': 'sub.domain.local'},
+                                 {'name': 'very.sub.domain.local'}])
 
 
 
 
 class TestDNSUpdate(unittest.TestCase):
     def setUp(self):
-        self.dnsUpdate = dnsupdate.DNSUpdate()
-        self.dnsUpdate.setHandler('inwx')
-        self.dnsUpdate.handler.setUserDict(inwxUserDict)
-        self.dnsUpdate.handler.setPasswdDict(inwxPasswdDict)
+        self.dnsu = dnsupdate.DNSUpdate()
+        self.dnsu.setHandler('inwx')
+        self.dnsu.handler.setUserDict(inwxUserDict)
+        self.dnsu.handler.setPasswdDict(inwxPasswdDict)
 
     def testDNSops(self):
-        self.dnsUpdate.delete({'name': testdomain})
-        qry = self.dnsUpdate.qry({'name': testdomain})
+        self.dnsu.delete({'name': turl})
+        qry = self.dnsu.qry({'name': turl})
         with self.subTest("Query result length after first delete 0"):
             self.assertEqual(len(qry), 0)
-        self.dnsUpdate.add({'name': testdomain, 'type': 'A', 'content': '1.2.3.4'})
-        qry = self.dnsUpdate.qry({'name': testdomain})
+        self.dnsu.add({'name': turl, 'type': 'A', 'content': '1.2.3.4'})
+        qry = self.dnsu.qry({'name': turl})
         with self.subTest("Query result length after add 1"):
             self.assertEqual(len(qry), 1)
-        self.dnsUpdate.add([{'name': testdomain, 'type': 'NS', 'content': 'ns23.'+testdomain}, {'name': testdomain, 'type': 'MX', 'content': 'mx23.'+testdomain}])
-        qry = self.dnsUpdate.qry({'name': testdomain})
+        self.dnsu.add([{'name': turl, 'type': 'NS', 'content': 'ns23.'+turl},
+                       {'name': turl, 'type': 'MX', 'content': 'mx23.'+turl}])
+        qry = self.dnsu.qry({'name': turl})
         with self.subTest("Query result length after 2 additional adds 3"):
             self.assertEqual(len(qry), 3)
-        self.dnsUpdate.delete([{'name': testdomain, 'type': 'NS'}])
-        qry = self.dnsUpdate.qry({'name': testdomain})
+        self.dnsu.delete([{'name': turl, 'type': 'NS'}])
+        qry = self.dnsu.qry({'name': turl})
         with self.subTest("Query result length after 1 delete 2"):
             self.assertEqual(len(qry), 2)
-        self.dnsUpdate.delete({'name': testdomain})
-        qry = self.dnsUpdate.qry({'name': testdomain})
+        self.dnsu.delete({'name': turl})
+        qry = self.dnsu.qry({'name': turl})
         with self.subTest("Query result length after last delete 0"):
             self.assertEqual(len(qry), 0)
 
     def testListOps(self):
-        self.dnsUpdate.delList({'name': testdomain, 'type': 'MX'})
-        x = [{'name': testdomain, 'type': 'MX', 'prio': 10, 'content':
-              'mx23.xmpl'}, {'name': testdomain, 'type': 'MX', 'prio': 10,
-                             'content': 'mx42.xmpl'}]
-        self.dnsUpdate.addList({'name': testdomain, 'type': 'MX', 'prio': 10}, ['mx23.xmpl', 'mx42.xmpl'])
-        q = self.dnsUpdate.qry({'name': testdomain, 'type': 'MX'})
+        self.dnsu.delList({'name': turl, 'type': 'MX'})
+        x = [{'name': turl, 'type': 'MX', 'prio': 10, 'content': 'mx23.xmpl'},
+             {'name': turl, 'type': 'MX', 'prio': 10, 'content': 'mx42.xmpl'}]
+        self.dnsu.addList({'name': turl, 'type': 'MX', 'prio': 10},
+                               ['mx23.xmpl', 'mx42.xmpl'])
+        q = self.dnsu.qry({'name': turl, 'type': 'MX'})
+        res = filterResult(q, ['name', 'content'], ['type', 'content', 'prio'])
+        ref = filterResult(x, ['name', 'content'], ['type', 'content', 'prio'])
         with self.subTest("Check addList()"):
-            self.assertEqual(filterResult(q,['name', 'content'], ['type',
-                                                                  'content',
-                                                                  'prio']), \
-                            filterResult(x,['name', 'content'],
-                                         ['type','content', 'prio'])
-                            )
+            self.assertEqual(res, ref)
 
 
     def testWildcards(self):
-        self.dnsUpdate.delete({'name': testdomain}, [], True)
-        recsAdded = [{'name': 'text.ns42.'+testdomain, 'type': 'TXT', 'content': 'x'}, \
-                     {'name': 'ns42.'+testdomain, 'type': 'NS', 'content': 'ns23.xmpl'}, \
-                     {'name': 'mx42.'+testdomain, 'type': 'MX', 'content': 'mx23.xmpl'}, \
-                     {'name': testdomain, 'type': 'A', 'content': '1.2.3.4'}]
-        self.dnsUpdate.add(recsAdded)
-        qry = self.dnsUpdate.qryWild({'name': testdomain})
+        self.dnsu.delete({'name': turl}, [], True)
+        recsAdded = [{'name':'text.ns42.'+turl,'type':'TXT','content':'x'},
+                     {'name':'ns42.'+turl,'type':'NS','content':'ns23.xmpl'},
+                     {'name':'mx42.'+turl,'type':'MX','content':'mx23.xmpl'},
+                     {'name':turl,'type':'A','content':'1.2.3.4'}]
+        recsDeled = [{'name': turl,'type': 'NS'},
+                     {'name': turl, 'content': 'mx23.xmpl'},
+                     {'name': turl, 'content': '1.2.3.4', 'type': 'TXT'}]
+        recsRem = recsAdded[1:3]
+        recUpd = {'name': 'mx42.'+turl, 'type': 'MX', 'content': 'mx1337.xmpl'}
+        self.dnsu.add(recsAdded)
+        qry = self.dnsu.qryWild({'name': turl})
         names = {e['name'] for e in qry}
         with self.subTest("Check if all names are there"):
-            self.assertEqual(names, {'text.ns42.'+testdomain, 'ns42.'+testdomain, 'mx42.'+testdomain, testdomain})
-        recsAddedDict = {e['name']: {k: v for k, v in e.items() if k in ['type', 'content']} for e in recsAdded}
-        recsQrydDict = {e['name']: {k: v for k, v in e.items() if k in ['type', 'content']} for e in qry}
+            self.assertEqual(names, {'text.ns42.'+turl,'ns42.'+turl,
+                                     'mx42.'+turl,turl})
+        recsAddedDict = filterResult(recsAdded, 'name', ['type', 'content'])
+        recsQrydDict = filterResult(qry, 'name', ['type', 'content'])
         with self.subTest("Check if name, type and content are correct"):
             self.assertEqual(recsQrydDict, recsAddedDict)
-        self.dnsUpdate.delete({'name': testdomain}, [{'name': testdomain,'type': 'NS'}, {'name': testdomain, 'content': 'mx23.xmpl'}, {'name': testdomain, 'content': '1.2.3.4', 'type': 'TXT'}], True)
-        qry = self.dnsUpdate.qryWild({'name': testdomain})
-        recsQrydDict = {e['name']: {k: v for k, v in e.items() if k in ['type', 'content']} for e in qry}
+        self.dnsu.delete({'name': turl}, recsDeled, True)
+        qry = self.dnsu.qryWild({'name': turl})
+        recsQrydDict = filterResult(qry, 'name', ['type', 'content'])
+        recsRemDict = filterResult(recsRem, 'name', ['type', 'content'])
         with self.subTest("Check if name, type and content are correct, after preserve"):
-            self.assertEqual(recsQrydDict, {'mx42.'+testdomain: {'type': 'MX', 'content': 'mx23.xmpl'}, 'ns42.'+testdomain: {'type': 'NS', 'content': 'ns23.xmpl'}})
-        self.dnsUpdate.update({'name': 'mx42.'+testdomain}, {'name': 'mx42.'+testdomain, 'type': 'MX', 'content': 'mx1337.xmpl'})
-        qry = self.dnsUpdate.qryWild({'name': testdomain})
-        recsQrydDict = {e['name']: {k: v for k, v in e.items() if k in ['type', 'content']} for e in qry}
+            self.assertEqual(recsQrydDict, recsRemDict)
+        self.dnsu.update({'name': 'mx42.'+turl}, recUpd)
+        qry = self.dnsu.qryWild({'name': turl})
+        recsQrydDict = filterResult(qry, 'name', ['type', 'content'])
+        recsNewDict = filterResult([recsAdded[1], recUpd], 'name', ['type', 'content'])
         with self.subTest("Check if name, type and content are correct, after update"):
-            self.assertEqual(recsQrydDict, {'mx42.'+testdomain: {'type': 'MX', 'content': 'mx1337.xmpl'}, 'ns42.'+testdomain: {'type': 'NS', 'content': 'ns23.xmpl'}})
+            self.assertEqual(recsQrydDict, recsNewDict)
 
 
 
 
     def tearDown(self):
-        self.dnsUpdate.handler.disconnect()
+        self.dnsu.handler.disconnect()
 
