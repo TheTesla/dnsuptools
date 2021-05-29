@@ -8,6 +8,10 @@ from tests.passwords import inwxUserDict, inwxPasswdDict
 testdomain = "test23.bahn.cf"
 #testdomain = "bahn.cf"
 
+def filterResult(x, pkeys, skeys):
+    pkeys = list(pkeys)
+    return {'_'.join([str(e[pkey]) for pkey in pkeys]): \
+            {k: v for k, v in e.items() if k in skeys} for e in x}
 
 class TestDNSUpdateMiscFncs(unittest.TestCase):
     def testFlatten(self):
@@ -38,8 +42,8 @@ class TestDNSUpdateMiscFncs(unittest.TestCase):
         with self.subTest("MatchUpperLabels.stateDict"):
             self.assertEqual(mul.stateDict, {'name': 'sub.domain.local'})
         with self.subTest("MatchUpperLabels.post(rv)"):
-            self.assertEqual(x, [{'name': 'sub.domain.local'}, {'name': 'very.sub.domain.local'}]
-)
+            self.assertEqual(x, [{'name': 'sub.domain.local'}, {'name': 'very.sub.domain.local'}])
+
 
 
 
@@ -72,6 +76,22 @@ class TestDNSUpdate(unittest.TestCase):
         with self.subTest("Query result length after last delete 0"):
             self.assertEqual(len(qry), 0)
 
+    def testListOps(self):
+        self.dnsUpdate.delList({'name': testdomain, 'type': 'MX'})
+        x = [{'name': testdomain, 'type': 'MX', 'prio': 10, 'content':
+              'mx23.xmpl'}, {'name': testdomain, 'type': 'MX', 'prio': 10,
+                             'content': 'mx42.xmpl'}]
+        self.dnsUpdate.addList({'name': testdomain, 'type': 'MX', 'prio': 10}, ['mx23.xmpl', 'mx42.xmpl'])
+        q = self.dnsUpdate.qry({'name': testdomain, 'type': 'MX'})
+        with self.subTest("Check addList()"):
+            self.assertEqual(filterResult(q,['name', 'content'], ['type',
+                                                                  'content',
+                                                                  'prio']), \
+                            filterResult(x,['name', 'content'],
+                                         ['type','content', 'prio'])
+                            )
+
+
     def testWildcards(self):
         self.dnsUpdate.delete({'name': testdomain}, [], True)
         recsAdded = [{'name': 'text.ns42.'+testdomain, 'type': 'TXT', 'content': 'x'}, \
@@ -90,7 +110,6 @@ class TestDNSUpdate(unittest.TestCase):
         self.dnsUpdate.delete({'name': testdomain}, [{'name': testdomain,'type': 'NS'}, {'name': testdomain, 'content': 'mx23.xmpl'}, {'name': testdomain, 'content': '1.2.3.4', 'type': 'TXT'}], True)
         qry = self.dnsUpdate.qryWild({'name': testdomain})
         recsQrydDict = {e['name']: {k: v for k, v in e.items() if k in ['type', 'content']} for e in qry}
-        print(recsQrydDict)
         with self.subTest("Check if name, type and content are correct, after preserve"):
             self.assertEqual(recsQrydDict, {'mx42.'+testdomain: {'type': 'MX', 'content': 'mx23.xmpl'}, 'ns42.'+testdomain: {'type': 'NS', 'content': 'ns23.xmpl'}})
         self.dnsUpdate.update({'name': 'mx42.'+testdomain}, {'name': 'mx42.'+testdomain, 'type': 'MX', 'content': 'mx1337.xmpl'})

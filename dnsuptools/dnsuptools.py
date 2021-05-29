@@ -5,6 +5,7 @@ from dnsuptools.dnsupdate import defaultDictList, MatchUpperLabels, DNSUpdate
 from dnsuptools.tlsarecgen import tlsaRecordsFromCertFile, tlsaFromFile
 from dnsuptools.dkimrecgen import dkimFromFile
 from simpleloggerplus import simpleloggerplus as log
+import re
 
 import pycurl
 try:
@@ -357,7 +358,7 @@ class DNSUpTools(DNSUpdate):
 
     def setNS(self, name, ns):
         self.addNS(name, ns)
-        self.delNS(anme, '*', ns)
+        self.delNS(name, '*', ns)
 
     def addTLSA(self, name, tlsaDict):
         tlsaDictList = tlsaFromFile(tlsaDict)
@@ -430,7 +431,7 @@ class DNSUpTools(DNSUpdate):
         return [rr for rr in rv if 'v=spf1' in rr['content'].split(' ')]
 
     def delSPF(self, name):
-        spf = qrySPF(name)
+        spf = self.qrySPF(name)
         self.setSPF(name, [], spf['id'])
 
     # only one SPF record allowed
@@ -477,7 +478,7 @@ class DNSUpTools(DNSUpdate):
             del dmarc['']
         else:
             dmarc.update(dmarcDict)
-        self.setDMARC(name, dmarc) 
+        self.setDMARC(name, dmarc)
 
 
     def delADSP(self, name, adspDelete = '*', adspPreserve = []):

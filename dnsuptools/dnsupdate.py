@@ -7,13 +7,13 @@ from dnsuptools.dnshelpers import createKeyDomainIfNotExists
 
 
 
-inwxUserDict = {'default': 'user'}
-inwxPasswdDict = {'default': 'passwd'}
-
-try:
-    from dnsuptools.passwords import *
-except:
-    log.debug('no passwords.py file for dnsuptools default login')
+#inwxUserDict = {'default': 'user'}
+#inwxPasswdDict = {'default': 'passwd'}
+#
+#try:
+#    from dnsuptools.passwords import inwxUserDict, inwxPasswdDict
+#except:
+#    log.debug('no passwords.py file for dnsuptools default login')
 
 def extractIds(rv):
     if type(rv) is list:
