@@ -87,13 +87,35 @@ class TestDNSUpdate(unittest.TestCase):
         self.dnsu.delList({'name': turl, 'type': 'MX'})
         x = [{'name': turl, 'type': 'MX', 'prio': 10, 'content': 'mx23.xmpl'},
              {'name': turl, 'type': 'MX', 'prio': 10, 'content': 'mx42.xmpl'}]
-        self.dnsu.addList({'name': turl, 'type': 'MX', 'prio': 10},
-                               ['mx23.xmpl', 'mx42.xmpl'])
+        y = [{'prio': 20, 'content': 'mx20.xmpl'},
+             {'prio': 30, 'content': 'mx30.xmpl'},
+             {'prio': 40, 'content': 'mx40.xmpl'}]
+        contx = [e['content'] for e in x]
+        self.dnsu.addList({'name': turl, 'type': 'MX', 'prio': 10}, contx)
         q = self.dnsu.qry({'name': turl, 'type': 'MX'})
         res = filterResult(q, ['name', 'content'], ['type', 'content', 'prio'])
         ref = filterResult(x, ['name', 'content'], ['type', 'content', 'prio'])
         with self.subTest("Check addList()"):
             self.assertEqual(res, ref)
+        self.dnsu.addDictList({'name': turl, 'type': 'MX'}, y)
+        q = self.dnsu.qry({'name': turl, 'type': 'MX'})
+        res = filterResult(q, ['content'], ['content', 'prio'])
+        ref = filterResult(x+y, ['content'], ['content', 'prio'])
+        with self.subTest("Check addDictList()"):
+            self.assertEqual(res, ref)
+        self.dnsu.delList({'name': turl}, ['mx30.xmpl', 'mx40.xmpl'])
+        q = self.dnsu.qry({'name': turl, 'type': 'MX'})
+        res = filterResult(q, ['content'], ['content', 'prio'])
+        ref = filterResult(x+[y[0]], ['content'], ['content', 'prio'])
+        with self.subTest("Check delList() (wo preserve)"):
+            self.assertEqual(res, ref)
+        self.dnsu.delList({'name': turl}, '*', ['mx20.xmpl', 'mx42.xmpl'])
+        q = self.dnsu.qry({'name': turl, 'type': 'MX'})
+        res = filterResult(q, ['content'], ['content', 'prio'])
+        ref = filterResult([x[1],y[0]], ['content'], ['content', 'prio'])
+        with self.subTest("Check delList() (with preserve)"):
+            self.assertEqual(res, ref)
+
 
 
     def testWildcards(self):
