@@ -127,6 +127,7 @@ class TestDNSUpdate(unittest.TestCase):
             self.assertEqual(idPresPost, idPresPre)
         self.dnsu.setList({'name': turl, 'type': 'MX', 'prio': 10}, [contx[1]])
         q = self.dnsu.qry({'name': turl, 'type': 'MX'})
+        idPresPre3 = [e['id'] for e in q if e['content'] == 'mx20.xmpl']
         idPresPost2 = [e['id'] for e in q if e['content'] == 'mx42.xmpl']
         res = filterResult(q, ['content'], ['content', 'prio'])
         ref = filterResult([x[1],y[0]], ['content'], ['content', 'prio'])
@@ -134,6 +135,15 @@ class TestDNSUpdate(unittest.TestCase):
             self.assertEqual(res, ref)
         with self.subTest("Check setList() (id preserved after delete)"):
             self.assertEqual(idPresPost2, idPresPost)
+        self.dnsu.setDictList({'name': turl, 'type': 'MX'}, [{}], y)
+        q = self.dnsu.qry({'name': turl, 'type': 'MX'})
+        idPresPost3 = [e['id'] for e in q if e['content'] == 'mx20.xmpl']
+        res = filterResult(q, ['content'], ['content', 'prio'])
+        ref = filterResult(y, ['content'], ['content', 'prio'])
+        with self.subTest("Check setDictList() (delete and preserve)"):
+            self.assertEqual(res, ref)
+        with self.subTest("Check setDictList() (id preserved after delete)"):
+            self.assertEqual(idPresPre3, idPresPost3)
 
 
 
