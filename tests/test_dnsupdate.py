@@ -59,9 +59,10 @@ class TestDNSUpdate(unittest.TestCase):
         self.dnsu.setHandler('inwx')
         self.dnsu.handler.setUserDict(inwxUserDict)
         self.dnsu.handler.setPasswdDict(inwxPasswdDict)
+        self.dnsu.delete({'name': turl}, wild=True)
 
     def testDNSops(self):
-        self.dnsu.delete({'name': turl})
+        self.dnsu.delete({'name': turl}, wild=True)
         qry = self.dnsu.qry({'name': turl})
         with self.subTest("Query result length after first delete 0"):
             self.assertEqual(len(qry), 0)
@@ -82,6 +83,37 @@ class TestDNSUpdate(unittest.TestCase):
         qry = self.dnsu.qry({'name': turl})
         with self.subTest("Query result length after last delete 0"):
             self.assertEqual(len(qry), 0)
+
+    def testUpdateOps(self):
+        self.dnsu.delete({'name': turl}, wild=True)
+        y = [{'prio': 20, 'content': 'mx20.xmpl'},
+             {'prio': 30, 'content': 'mx30.xmpl'},
+             {'prio': 40, 'content': 'mx40.xmpl'}]
+        self.dnsu.addDictList({'name': turl, 'type': 'MX'}, y)
+        q = self.dnsu.qry({'name': turl, 'type': 'MX'})
+        print(q)
+        refq = filterResult(q, ['content'], ['name', 'type', 'id', 'prio'])
+        ref = {k: v for k, v in refq.items() if k != 'mx20.xmpl'}
+        ref['mxup.xmpl'] = refq['mx20.xmpl']
+        self.dnsu.update({'name': turl, 'type': 'MX', 'prio': 20},
+                         {'content': 'mxup.xmpl'})
+        q = self.dnsu.qry({'name': turl, 'type': 'MX'})
+        print(q)
+        res = filterResult(q, ['content'], ['name', 'type', 'id', 'prio'])
+        with self.subTest("Check update() - id and content"):
+            self.assertEqual(res, ref)
+        ref = {k: v for k, v in refq.items() if not (k == 'mx30.xmpl' or k ==
+                                                     'mx20.xmpl')}
+        ref['mxup30.xmpl'] = refq['mx30.xmpl']
+        ref['mxup.xmpl'] = refq['mx20.xmpl']
+        self.dnsu.update({'name': turl, 'type': 'MX', 'content': 'mx30.xmpl'},
+                         {'content': 'mxup30.xmpl'})
+        q = self.dnsu.qry({'name': turl, 'type': 'MX'})
+        print(q)
+        res = filterResult(q, ['content'], ['name', 'type', 'id', 'prio'])
+        with self.subTest("Check update() - preserve prio in updated record"):
+            self.assertEqual(res, ref)
+
 
     def testListOps(self):
         self.dnsu.delList({'name': turl, 'type': 'MX'})
@@ -144,6 +176,15 @@ class TestDNSUpdate(unittest.TestCase):
             self.assertEqual(res, ref)
         with self.subTest("Check setDictList() (id preserved after delete)"):
             self.assertEqual(idPresPre3, idPresPost3)
+        self.dnsu.setDictList({'name': turl}, [{'prio': 30}, {'prio': 40}], x)
+        q = self.dnsu.qry({'name': turl, 'type': 'MX'})
+        idPresPost4 = [e['id'] for e in q if e['content'] == 'mx20.xmpl']
+        res = filterResult(q, ['content'], ['content', 'prio'])
+        ref = filterResult(x+[y[0]], ['content'], ['content', 'prio'])
+        with self.subTest("Check setDictList() (selective delete and set)"):
+            self.assertEqual(res, ref)
+        with self.subTest("Check setDictList() (id preserved after set)"):
+            self.assertEqual(idPresPost3, idPresPost4)
 
 
 

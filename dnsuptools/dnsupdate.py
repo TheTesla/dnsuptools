@@ -171,11 +171,13 @@ class DNSUpdate:
 
     def update(self, baseRecord, updateDict):
         matchRv = self.qry(baseRecord)
+        #print(matchRv)
         matchIds = set(flatten(extractIds(matchRv)))
+        baseRecord = matchRv[0]
         baseRecord.update(updateDict)
         if len(matchIds) > 0:
-            baseRecord['id'] = list(matchIds)[0]
-            del baseRecord['domain']
+            #baseRecord['id'] = list(matchIds)[0]
+            #del baseRecord['domain']
             log.debug('updateRecord {}'.format(baseRecord))
             infoRecord(baseRecord, 'update')
             self.__rv = self.handler.update(baseRecord)
