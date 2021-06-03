@@ -50,7 +50,9 @@ def matchUpperLabelsPre(filterDict, stateDict):
 
 def matchUpperLabelsPost(rv, stateDict):
     name = str(stateDict['name'])
-    rv[:] = [e for e in rv if name.count('.') <= e['name'].count('.') if e['name'].split('.', e['name'].count('.') - name.count('.'))[-1] == name]
+    noDots = name.count('.')
+    rv[:] = [e for e in rv if noDots <= e['name'].count('.')
+             if e['name'].split('.', e['name'].count('.') - noDots)[-1] == name]
 
 class MatchUpperLabels:
     def __init__(self):
@@ -154,7 +156,8 @@ class DNSUpdate:
     def upd(self, updateDict):
         if type(updateDict) is not list:
             updateDict = [updateDict]
-        return [(self.handler.update(e), infoRecord(e, 'update'))[0] for e in updateDict if 'id' in e]
+        return [(self.handler.update(e), infoRecord(e, 'update'))[0]
+                for e in updateDict if 'id' in e]
 
 
     # updates or adds records
@@ -171,13 +174,10 @@ class DNSUpdate:
 
     def update(self, baseRecord, updateDict):
         matchRv = self.qry(baseRecord)
-        #print(matchRv)
         matchIds = set(flatten(extractIds(matchRv)))
         baseRecord = matchRv[0]
         baseRecord.update(updateDict)
         if len(matchIds) > 0:
-            #baseRecord['id'] = list(matchIds)[0]
-            #del baseRecord['domain']
             log.debug('updateRecord {}'.format(baseRecord))
             infoRecord(baseRecord, 'update')
             self.__rv = self.handler.update(baseRecord)
@@ -198,7 +198,9 @@ class DNSUpdate:
     def delList(self, baseRecord, contentDelete = '*', contentPreserve = [], wild = False):
         if type(contentDelete) is str:
             contentDelete = [contentDelete]
-        self.delDictList(baseRecord, [{}] if '*' in contentDelete else [{'content': e} for e in contentDelete], [{'content': e} for e in contentPreserve], wild)
+        dictListDel = [{}] if '*' in contentDelete else [{'content': e} for e in contentDelete]
+        dictListPreserve = [{'content': e} for e in contentPreserve]
+        self.delDictList(baseRecord, dictListDel, dictListPreserve, wild)
 
     def delDictList(self, baseRecord, dictListDelete = [{}], dictListPreserve = [], wild = False):
         delList = defaultDictList(baseRecord, dictListDelete)
