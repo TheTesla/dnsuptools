@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- encoding: UTF8 -*-
 
+import time
 from INWX.Domrobot import ApiClient
 
 from simpleloggerplus import simpleloggerplus as log
@@ -97,7 +98,7 @@ class INWXwrapper:
         self.autologin(infoDict)
         stateDict = {}
         caaWorkaroundPre(infoDict, stateDict)
-        rv = self.__conn.call_api(api_method='nameserver.info', method_params=infoDict)
+        rv = self.callAPI('nameserver.info', infoDict)
         rv = rv['resData']
         if 'record' not in rv:
             return []
@@ -108,23 +109,43 @@ class INWXwrapper:
     def create(self, createDict):
         createKeyDomainIfNotExists(createDict)
         self.login(createDict['domain'])
-        return self.__conn.call_api(api_method='nameserver.createRecord', method_params=createDict)
+        return self.callAPI('nameserver.createRecord', createDict)
 
     # warning: no autologin, if no domain and no name provided
     #          - that is when you support only the record id
-    #          but should not be a problem, because you can only 
-    #          know record id after info() needing login, automatically 
+    #          but should not be a problem, because you can only
+    #          know record id after info() needing login, automatically
     #          happen by providing domain or name
     def delete(self, deleteDict):
         self.autologin(deleteDict)
-        return self.__conn.call_api(api_method='nameserver.deleteRecord', method_params=deleteDict)
+        return self.callAPI('nameserver.deleteRecord', deleteDict)
 
     def update(self, updateDict):
         self.autologin(updateDict)
         if 'domain' in updateDict:
             del updateDict['domain']
-        return self.__conn.call_api(api_method='nameserver.updateRecord', method_params=updateDict)
+        return self.callAPI('nameserver.updateRecord', updateDict)
 
+    def callAPI(self, method, params):
+        for i in range(10):
+            if i > 0:
+                log.info('INWX api wait {} s before retry'.format(i**3))
+                time.sleep(i**3)
+            rv = self.__conn.call_api(api_method=method, method_params=params)
+            if 2400 == rv['code']:
+                log.info('INWX api error code: {}'.format(rv['code']))
+                continue
+            if 2500 == rv['code']:
+                log.info('INWX api error code: {}'.format(rv['code']))
+                continue
+            if 2502 == rv['code']:
+                log.info('INWX api error code: {}'.format(rv['code']))
+                continue
+            return rv
+
+        log.error('INWX api retry limit exceeded!')
+        log.error('INWX api error code was: {}'.format(rv['code']))
+        return rv
 
 def caaWorkaroundPre(infoDict, stateDict):
     stateDict['iscaa'] = False
