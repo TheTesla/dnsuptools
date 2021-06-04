@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/TheTesla/dnsuptools.svg?branch=master)](https://travis-ci.com/TheTesla/dnsuptools)
+
 # DNSupTools
 
 This program library depends on pycurl. To use this you need:
