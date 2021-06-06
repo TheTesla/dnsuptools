@@ -2,6 +2,9 @@
 
 # DNSupTools
 
+This is a python library enabling easy dns server record updates. Currently only
+inwx.de is supported.
+
 This program library depends on pycurl. To use this you need:
 
 ```bash
