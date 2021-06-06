@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 # -*- encoding: UTF8 -*-
 
-from simpleloggerplus import simpleloggerplus as log
-
-
-
 try:
     import git
-    from git.exc import InvalidGitRepositoryError
+    #from git.exc import InvalidGitRepositoryError
     repo = git.Repo(search_parent_directories=False)
     __version__ = '-'.join(repo.git.describe('--tags').split('-')[:2])
     with open('version', 'wt') as v:
@@ -18,7 +14,6 @@ except Exception as e:
         with open('version', 'rt') as v:
             __version__ = v.read()
     except OSError as e:
-        log.warn("Can't open version file.")
         __version__ = ''
 #except InvalidGitRepositoryError as e:
 
