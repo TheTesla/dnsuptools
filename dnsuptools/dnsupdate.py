@@ -175,7 +175,8 @@ class DNSUpdate:
     def update(self, baseRecord, updateDict):
         matchRv = self.qry(baseRecord)
         matchIds = set(flatten(extractIds(matchRv)))
-        baseRecord = matchRv[0]
+        if len(matchRv) > 0:
+            baseRecord = matchRv[0]
         baseRecord.update(updateDict)
         if len(matchIds) > 0:
             log.debug('updateRecord {}'.format(baseRecord))

@@ -5,7 +5,8 @@ import unittest
 from dnsuptools import dnsupdate
 from tests.passwords import inwxUserDict, inwxPasswdDict
 
-turl = "test23.bahn.cf"
+#turl = "test23.bahn.cf"
+turl = "test42.bahn.cf"
 #turl = "bahn.cf"
 
 def filterResult(x, pkeys, skeys):
