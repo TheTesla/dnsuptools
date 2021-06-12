@@ -92,14 +92,12 @@ class TestDNSUpdate(unittest.TestCase):
              {'prio': 40, 'content': 'mx40.xmpl'}]
         self.dnsu.addDictList({'name': turl, 'type': 'MX'}, y)
         q = self.dnsu.qry({'name': turl, 'type': 'MX'})
-        print(q)
         refq = filterResult(q, ['content'], ['name', 'type', 'id', 'prio'])
         ref = {k: v for k, v in refq.items() if k != 'mx20.xmpl'}
         ref['mxup.xmpl'] = refq['mx20.xmpl']
         self.dnsu.update({'name': turl, 'type': 'MX', 'prio': 20},
                          {'content': 'mxup.xmpl'})
         q = self.dnsu.qry({'name': turl, 'type': 'MX'})
-        print(q)
         res = filterResult(q, ['content'], ['name', 'type', 'id', 'prio'])
         with self.subTest("Check update() - id and content"):
             self.assertEqual(res, ref)
@@ -110,11 +108,16 @@ class TestDNSUpdate(unittest.TestCase):
         self.dnsu.update({'name': turl, 'type': 'MX', 'content': 'mx30.xmpl'},
                          {'content': 'mxup30.xmpl'})
         q = self.dnsu.qry({'name': turl, 'type': 'MX'})
-        print(q)
         res = filterResult(q, ['content'], ['name', 'type', 'id', 'prio'])
         with self.subTest("Check update() - preserve prio in updated record"):
             self.assertEqual(res, ref)
-
+        self.dnsu.update({'name': 'sub.'+turl, 'type': 'MX'}, y[0])
+        q = self.dnsu.qry({'name': 'sub.'+turl, 'type': 'MX'})
+        ref = filterResult([{'name': 'sub.'+turl, 'type': 'MX', **y[0]}],
+                           ['content'], ['name', 'type', 'prio'])
+        res = filterResult(q, ['content'], ['name', 'type', 'prio'])
+        with self.subTest("Check update() - add() fallback if not existing"):
+            self.assertEqual(res, ref)
 
     def testListOps(self):
         self.dnsu.delList({'name': turl, 'type': 'MX'})
