@@ -8,10 +8,7 @@ from simpleloggerplus import simpleloggerplus as log
 import re
 
 import pycurl
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import BytesIO
 
 import socket
 import dns.resolver
@@ -145,14 +142,14 @@ def sanIPv6(x):
     return re.sub('[^0-9:a-fA-F]', '', x)
 
 def curlGet(url):
-    buff = StringIO()
+    buff = BytesIO()
     c = pycurl.Curl()
     c.setopt(pycurl.CONNECTTIMEOUT, 4)
     c.setopt(c.URL, str(url))
     c.setopt(c.WRITEDATA, buff)
     c.perform()
     c.close()
-    return str(buff.getvalue())
+    return buff.getvalue().decode()
 
 def getIPv4(a = 'auto'):
     if 'auto' != a:
