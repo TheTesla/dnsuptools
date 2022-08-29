@@ -20,7 +20,7 @@ def tlsaFromCertFile(certFilename, certConstr = 3, keyOnly = 0, hashType = 1):
         output = hashlib.sha256(ASN1).hexdigest()
     elif 2 == int(hashType):
         output = hashlib.sha512(ASN1).hexdigest()
-    return output.encode()
+    return output
 
 def tlsaRecordsFromCertFile(certFilenames, tlsaTypes = [[3,0,1], [3,0,2], [3,1,1], [3,1,2], [2,0,1], [2,0,2], [2,1,1], [2,1,2]]):
     tlsaList = []
@@ -39,5 +39,5 @@ def tlsaFromFile(tlsaDict):
     if 'filename' not in tlsaDict:
         return tlsaDict
     tlsaDict['tlsa'] = tlsaFromCertFile(tlsaDict['filename'], tlsaDict['usage'], tlsaDict['selector'], tlsaDict['matchingtype'])
-    tlsaDict['tlsa'] = tlsaDict['tlsa'].replace(b'\n', b'')
+    tlsaDict['tlsa'] = tlsaDict['tlsa'].replace('\n', '')
     return tlsaDict

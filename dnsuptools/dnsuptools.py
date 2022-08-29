@@ -66,7 +66,7 @@ def formatTLSAentry(name, tlsaDict):
     tlsa.update(tlsaDict)
     if '*' != tlsa['port']:
         tlsa['port'] = '_{}'.format(tlsa['port'])
-    tlsa['tlsa'] = tlsa['tlsa'].replace(b'\n',b'')
+    tlsa['tlsa'] = tlsa['tlsa'].replace('\n','')
     return {'name': '{x[port]}._{x[proto]}.{name}'.format(x=tlsa, name=str(name)), 'type': 'TLSA', 'content': '{x[usage]} {x[selector]} {x[matchingtype]} {x[tlsa]}'.format(x=tlsa)}
 
 
